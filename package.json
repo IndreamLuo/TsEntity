@@ -1,0 +1,24 @@
+{
+  "name": "TsEntity",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/IndreamLuo/TsEntity.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/IndreamLuo/TsEntity/issues"
+  },
+  "homepage": "https://github.com/IndreamLuo/TsEntity#readme",
+  "devDependencies": {
+    "sqlite3": "^4.1.0"
+  }
+}
