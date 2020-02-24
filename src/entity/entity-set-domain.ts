@@ -1,3 +1,6 @@
+import { EntityDomain } from "./entity-domain";
+
+
 export class EntityConfig<TEntity extends EntityBase<TEntity>> {
     Table!: string;
     Mappings!: { [column: string]: { (token: TokenEntitySet<TEntity>): Column<boolean | number | string> }};
@@ -11,12 +14,7 @@ export abstract class EntityBase<TEntity extends EntityBase<TEntity>> {
 }
 
 
-export abstract class EntityItem<T> {
-    abstract GetQueryString(): string;
-}
-
-
-export abstract class EntitySet<TEntity extends EntityBase<TEntity>> extends EntityItem<TEntity> {
+export abstract class EntitySet<TEntity extends EntityBase<TEntity>> extends EntityDomain {
     constructor (public EntityType: { new(): TEntity }) {
         super();
 
@@ -191,7 +189,7 @@ export class ConditionEntitySet<TEntity extends EntityBase<TEntity>, TCondition 
 }
 
 
-export abstract class Column<TColumn extends boolean | number | string | null> extends EntityItem<TColumn> {
+export abstract class Column<TColumn extends boolean | number | string | null> extends EntityDomain {
     constructor (public GetColumn: { (): string }) {
         super();
     }

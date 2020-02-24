@@ -1,3 +1,3 @@
 export declare class EntitiesTests {
-    static Build(): void;
+    static CheckConfigurations(): void;
 }

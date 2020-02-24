@@ -1,14 +1,14 @@
 import { Company } from "./entities/company";
 import { Employee } from "./entities/employee";
+import { EntityConfiguration } from "../entity/configuration/entity-configuration";
 
 export class EntitiesTests {
-    static Build() {
-        let company = new Company();
-        let employee = new Employee();
+    static CheckConfigurations() {
+        console.log(EntityConfiguration.Get(Company).Table);
+        console.log(EntityConfiguration.Get(Company).Columns['name'].Name);
 
-        console.log((company as any)['_entity']['table']);
-        console.log((employee as any)['_entity']['table']);
+        console.log(EntityConfiguration.Get(Employee).Table);
     }
 }
 
-EntitiesTests.Build();
+EntitiesTests.CheckConfigurations();
