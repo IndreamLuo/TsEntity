@@ -1,4 +1,4 @@
-import { EntityColumnConfiguration } from "./entity-column-configuration";
+import { EntityColumnConfiguration, EntityKeyConfiguration, EntityRelationshipConfiguration } from "./entity-column-configuration";
 
 export class EntityConfiguration {
     constructor (public Constructor: any) {
@@ -7,6 +7,26 @@ export class EntityConfiguration {
 
     Table: string = this.Constructor.name;
     Columns: { [key: string]: EntityColumnConfiguration } = {}
+
+    private SetColumnConfigurationIfNotExist(column: string, getConfiguration: { (column: string): EntityColumnConfiguration }) {
+        return this.Columns[column] = this.Columns[column] || getConfiguration(column);
+    }
+
+    SetColumn(column: string) {
+        return this.SetColumnConfigurationIfNotExist(column, column => new EntityColumnConfiguration(column));
+    }
+
+    SetKey(column: string) {
+        return this.SetColumnConfigurationIfNotExist(column, column => new EntityKeyConfiguration(column));
+    }
+
+    SetSingle<T>(column: string, type: { new(): T }) {
+        return this.SetColumnConfigurationIfNotExist(column, column => new EntityRelationshipConfiguration(column));
+    }
+
+    SetMany<T>(column: string, type: { new(): T }) {
+        return this.SetColumnConfigurationIfNotExist(column, column => new EntityRelationshipConfiguration(column, true));
+    }
 
     static All: { [key: string]: EntityConfiguration[] } = {};
 

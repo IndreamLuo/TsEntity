@@ -1,12 +1,14 @@
-import { table, column } from "../../entity/decorators";
+import { table, column, key, many } from "../../entity/decorators";
 import { Employee } from "./employee";
 
 @table('Company')
 export class Company {
-    id!: number;
+    @key()
+    Id!: number;
 
-    @column('name')
-    name!: string;
+    @column('Name')
+    Name!: string;
 
-    employees!: Employee[];
+    @many(Employee)
+    Employees!: Employee[];
 }

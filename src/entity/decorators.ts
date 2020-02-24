@@ -13,7 +13,22 @@ export function table(tableName: string | null = null) {
 
 export function column(columnName: string | null = null) {
   return function (object: Object, propertyName: string) {
-    let configuration = EntityConfiguration.Get(object.constructor);
-    configuration.Columns[propertyName] = new EntityColumnConfiguration(columnName || propertyName);
+    EntityConfiguration
+      .Get(object.constructor)
+      .SetColumn(columnName || propertyName);
+  }
+}
+
+export function key(columnName: string = 'Id') {
+  return function (object: Object, propertyName: string) {
+    EntityConfiguration
+      .Get(object.constructor)
+      .SetKey(columnName || propertyName);
+  }
+}
+
+export function many<T>(type: { new(): T }, foreignKeys: string | string[] | null = null) {
+  return function (object: Object, propertyName: string) {
+    
   }
 }

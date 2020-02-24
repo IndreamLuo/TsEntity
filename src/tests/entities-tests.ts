@@ -5,7 +5,10 @@ import { EntityConfiguration } from "../entity/configuration/entity-configuratio
 export class EntitiesTests {
     static CheckConfigurations() {
         console.log(EntityConfiguration.Get(Company).Table);
-        console.log(EntityConfiguration.Get(Company).Columns['name'].Name);
+        console.log(EntityConfiguration.Get(Company).Columns['Name'].Name);
+        console.log(EntityConfiguration.Get(Company).Columns['Name'].IsKey);
+        console.log(EntityConfiguration.Get(Company).Columns['Id'].Name);
+        console.log(EntityConfiguration.Get(Company).Columns['Id'].IsKey);
 
         console.log(EntityConfiguration.Get(Employee).Table);
     }

@@ -3,3 +3,13 @@ export class EntityColumnConfiguration {
 
     }
 }
+
+export class EntityKeyConfiguration extends EntityColumnConfiguration {
+    
+}
+
+export class EntityRelationshipConfiguration extends EntityColumnConfiguration {
+    constructor (name: string, many: boolean = false) {
+        super(name);
+    }
+}
