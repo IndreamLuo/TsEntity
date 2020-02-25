@@ -1,7 +1,12 @@
-import { table } from "../../entity/decorators";
+import { table, one } from "../../entity/decorators";
 import { Company } from "./company";
 
 @table()
 export class Employee {
-    Company!: Company
+    constructor(company: Company) {
+        this.Company = company;
+    }
+
+    @one(Company)
+    Company: Company;
 }

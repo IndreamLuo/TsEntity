@@ -1,5 +1,4 @@
 import { EntityConfiguration } from "./configuration/entity-configuration";
-import { EntityColumnConfiguration } from "./configuration/entity-column-configuration";
 
 export function table(tableName: string | null = null) {
   return (constructor: any) => {
@@ -19,16 +18,26 @@ export function column(columnName: string | null = null) {
   }
 }
 
-export function key(columnName: string = 'Id') {
+export function id(columnName: string = 'Id') {
   return function (object: Object, propertyName: string) {
     EntityConfiguration
       .Get(object.constructor)
-      .SetKey(columnName || propertyName);
+      .SetId(columnName || propertyName);
   }
 }
 
-export function many<T>(type: { new(): T }, foreignKeys: string | string[] | null = null) {
+export function one<T>(type: { new(...args: any[]): T }, foreignKey: string | null = null) {
   return function (object: Object, propertyName: string) {
-    
+    EntityConfiguration
+      .Get(object.constructor)
+      .SetOne(propertyName, foreignKey || `${propertyName}Id`, type);
+  }
+}
+
+export function many<T>(type: { new(...args: any[]): T }) {
+  return function (object: Object, propertyName: string) {
+    EntityConfiguration
+      .Get(object.constructor)
+      .SetMany(propertyName, type);
   }
 }

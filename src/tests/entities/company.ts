@@ -1,9 +1,9 @@
-import { table, column, key, many } from "../../entity/decorators";
+import { table, column, id, many } from "../../entity/decorators";
 import { Employee } from "./employee";
 
 @table('Company')
 export class Company {
-    @key()
+    @id()
     Id!: number;
 
     @column('Name')

@@ -1,4 +1,4 @@
-import { EntityColumnConfiguration, EntityKeyConfiguration, EntityRelationshipConfiguration } from "./entity-column-configuration";
+import { EntityColumnConfiguration, EntityIdConfiguration, EntityRelationshipConfiguration } from "./entity-column-configuration";
 
 export class EntityConfiguration {
     constructor (public Constructor: any) {
@@ -6,26 +6,37 @@ export class EntityConfiguration {
     }
 
     Table: string = this.Constructor.name;
+    Id: EntityColumnConfiguration = EntityColumnConfiguration.Unknown;
     Columns: { [key: string]: EntityColumnConfiguration } = {}
+    Relationships: { [key: string]: EntityRelationshipConfiguration } = {}
 
-    private SetColumnConfigurationIfNotExist(column: string, getConfiguration: { (column: string): EntityColumnConfiguration }) {
-        return this.Columns[column] = this.Columns[column] || getConfiguration(column);
+    private SetColumnConfigurationIfNotExist<TConfiguration extends EntityColumnConfiguration>(column: string, getConfiguration: { (column: string): TConfiguration }) {
+        column = column.toUpperCase();
+        return (this.Columns[column] = this.Columns[column] || getConfiguration(column)) as TConfiguration;
     }
 
     SetColumn(column: string) {
         return this.SetColumnConfigurationIfNotExist(column, column => new EntityColumnConfiguration(column));
     }
 
-    SetKey(column: string) {
-        return this.SetColumnConfigurationIfNotExist(column, column => new EntityKeyConfiguration(column));
+    SetId(column: string) {
+        return this.Id = this.SetColumnConfigurationIfNotExist(column, column => new EntityIdConfiguration(column));
+    }
+    
+    SetRelationship(relationship: EntityRelationshipConfiguration) {
+        return this.Relationships[relationship.Name.toUpperCase()] = relationship;
     }
 
-    SetSingle<T>(column: string, type: { new(): T }) {
-        return this.SetColumnConfigurationIfNotExist(column, column => new EntityRelationshipConfiguration(column));
+    SetOne<T>(column: string, foreignKey: string, type: { new(): T }) {
+        return this.SetRelationship(new EntityRelationshipConfiguration(
+            this,
+            column,
+            type,
+            foreignKey));
     }
 
     SetMany<T>(column: string, type: { new(): T }) {
-        return this.SetColumnConfigurationIfNotExist(column, column => new EntityRelationshipConfiguration(column, true));
+        return this.SetRelationship(new EntityRelationshipConfiguration(this, column, type, null, true));
     }
 
     static All: { [key: string]: EntityConfiguration[] } = {};

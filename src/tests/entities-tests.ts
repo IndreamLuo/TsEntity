@@ -4,13 +4,18 @@ import { EntityConfiguration } from "../entity/configuration/entity-configuratio
 
 export class EntitiesTests {
     static CheckConfigurations() {
-        console.log(EntityConfiguration.Get(Company).Table);
-        console.log(EntityConfiguration.Get(Company).Columns['Name'].Name);
-        console.log(EntityConfiguration.Get(Company).Columns['Name'].IsKey);
-        console.log(EntityConfiguration.Get(Company).Columns['Id'].Name);
-        console.log(EntityConfiguration.Get(Company).Columns['Id'].IsKey);
+        console.info(EntityConfiguration.Get(Company).Table);
+        console.info(EntityConfiguration.Get(Company).Id.Name);
+        console.info(EntityConfiguration.Get(Company).Columns['ID'].Name);
+        console.info(EntityConfiguration.Get(Company).Columns['NAME'].Name);
+        console.info(EntityConfiguration.Get(Company).Relationships['EMPLOYEES'].Name);
+        console.info(EntityConfiguration.Get(Company).Relationships['EMPLOYEES'].Many);
 
-        console.log(EntityConfiguration.Get(Employee).Table);
+        console.info(EntityConfiguration.Get(Employee).Table);
+        console.info(EntityConfiguration.Get(Employee).Id.Name);
+        console.info(EntityConfiguration.Get(Employee).Columns["COMPANYID"].Name);
+        console.info(EntityConfiguration.Get(Employee).Relationships["COMPANY"].Name);
+        console.info(EntityConfiguration.Get(Employee).Relationships["COMPANY"].Many);
     }
 }
 
