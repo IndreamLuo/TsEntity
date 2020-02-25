@@ -20,5 +20,8 @@
   "homepage": "https://github.com/IndreamLuo/TsEntity#readme",
   "devDependencies": {
     "sqlite3": "^4.1.0"
+  },
+  "dependencies": {
+    "reflect-metadata": "^0.1.13"
   }
 }

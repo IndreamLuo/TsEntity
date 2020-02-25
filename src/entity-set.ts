@@ -1,51 +1,28 @@
-export class EntityConfig<TEntity extends EntityBase<TEntity>> {
+export class EntityConfig<TEntity> {
     Table!: string;
-    Mappings!: { [column: string]: { (token: TokenEntitySet<TEntity>): Column<boolean | number | string> }};
+    Mappings!: { [column: string]: { (token: TEntity & ITokenEntity): Column<boolean | number | string> }};
 }
 
 
-export abstract class EntityBase<TEntity extends EntityBase<TEntity>> {
-    constructor () { }
-
-    __Config!: EntityConfig<TEntity>;
+export interface IEntityQuery {
+    GetQueryString(): string;
 }
 
 
-export abstract class EntityItem<T> {
-    abstract GetQueryString(): string;
-}
-
-
-export abstract class EntitySet<TEntity extends EntityBase<TEntity>> extends EntityItem<TEntity> {
+export abstract class EntityItem<TEntity> implements IEntityQuery {
     constructor (public EntityType: { new(): TEntity }) {
-        super();
-
         this.Entity = new EntityType();
     }
 
     Entity: TEntity;
 
-    _source!: SourceEntitySet<TEntity>;
-    get Source(): SourceEntitySet<TEntity> {
-        return this._source;
-    }
-    set Source(value: SourceEntitySet<TEntity>) {
-        this._source = (value instanceof SourceEntitySet) && value || new SourceEntitySet(this.EntityType, this);
-    }
+    Source?: SourceEntitySet<TEntity>;
 
-    Where<TCondition extends EntityBase<TCondition>>(query: (eachEnitity: TokenEntitySet<TEntity>) => EntitySet<TCondition>, conditionType: { new(): TCondition } | null = null): EntitySet<TEntity> {
+    abstract GetQueryString(): string;
+
+    Select<TSelected>(query: (eachEnitity: TEntity & ITokenEntity) => EntitySet<TSelected>, conditionType: { new(): TSelected } | null = null): EntitySet<TSelected> {
         var returnEntityType = conditionType == null
-            ? query(new TokenEntitySet<TEntity>(this.EntityType, this.Source)).EntityType
-            : conditionType;
-            
-        var queryEntitySet = new QueryEntitySet<TEntity, TCondition>(returnEntityType, this, query);
-
-        return new ConditionEntitySet<TEntity, TCondition>(this.EntityType, this, queryEntitySet);
-    }
-
-    Select<TSelected extends EntityBase<TSelected>>(query: (eachEnitity: TokenEntitySet<TEntity>) => EntitySet<TSelected>, conditionType: { new(): TSelected } | null = null): EntitySet<TSelected> {
-        var returnEntityType = conditionType == null
-            ? query(new TokenEntitySet<TEntity>(this.EntityType, this.Source)).EntityType
+            ? query(this.Source!.Token).EntityType
             : conditionType;
 
         var queryEntitySet = new QueryEntitySet<TEntity, TSelected>(returnEntityType, this, query);
@@ -55,14 +32,62 @@ export abstract class EntitySet<TEntity extends EntityBase<TEntity>> extends Ent
 }
 
 
-export class SourceEntitySet<TEntity extends EntityBase<TEntity>> extends EntitySet<TEntity> {
-    constructor (entityType: { new(): TEntity }, public Of: EntitySet<TEntity>) {
-        super (entityType);
-        
-        this.Token = new TokenEntitySet<TEntity>(entityType, this);
+export class SingleEntity<TEntity> extends EntityItem<TEntity> {
+    constructor (public Of: EntitySet<TEntity>) {
+        super(Of.EntityType);
+
+        this.Take = this.Of.Take(1);
+        this.Source = this.Take.Source;
     }
 
-    Token: TokenEntitySet<TEntity>;
+    Take: TakeEntitySet<TEntity>;
+
+    GetQueryString(): string {
+        return this.Take.GetQueryString();
+    }
+}
+
+
+export abstract class EntitySet<TEntity> extends EntityItem<TEntity> {
+    abstract GetQueryString(): string;
+
+    One(id?: number): SingleEntity<TEntity> {
+        return new SingleEntity(this);
+    }
+
+    Take(number: number): TakeEntitySet<TEntity> {
+        return new TakeEntitySet(this, number);
+    }
+
+    Where<TCondition>(query: (eachEnitity: TEntity & ITokenEntity) => EntitySet<TCondition>, conditionType: { new(): TCondition } | null = null): EntitySet<TEntity> {
+        var returnEntityType = conditionType == null
+            ? query(this.Source!.Token).EntityType
+            : conditionType;
+            
+        var queryEntitySet = new QueryEntitySet<TEntity, TCondition>(returnEntityType, this, query);
+
+        return new ConditionEntitySet<TEntity, TCondition>(this, queryEntitySet);
+    }
+}
+
+
+export class SourceEntitySet<TEntity> extends EntityItem<TEntity> {
+    constructor (public Of: EntityItem<TEntity>) {
+        super (Of.EntityType);
+        
+        this.Token = new this.EntityType() as unknown as TEntity & ITokenEntity;
+        this.Token.Token = SourceEntitySet.GetToken();
+        this.Token.GetQueryString = function () {
+            return this.Token;
+        }
+    }
+
+    static TokenIndex: number;
+    static GetToken(): string {
+        return `A_${SourceEntitySet.TokenIndex++}`;
+    }
+
+    Token: ITokenEntity & TEntity;
 
     GetQueryString(): string {
         return this.Of.GetQueryString();
@@ -70,64 +95,59 @@ export class SourceEntitySet<TEntity extends EntityBase<TEntity>> extends Entity
 }
 
 
-export class TokenEntitySet<TEntity extends EntityBase<TEntity>> extends EntitySet<TEntity> {
-    constructor (entityType: { new(): TEntity }, public Of: SourceEntitySet<TEntity>) {
+export interface ITokenEntity extends IEntityQuery {
+    Token: string;
+}
+
+
+export class TableEntitySet<TEntity extends object> extends EntitySet<TEntity> {
+    constructor (entityType: { new(): TEntity }) {
         super(entityType);
 
-        this.Token = TokenEntitySet.GetToken();
-        this.Source = this.Of;
+        this.Source = new SourceEntitySet(this);
     }
 
-    static TokenIndex: number;
-    static GetToken(): string {
-        return `A_${TokenEntitySet.TokenIndex++}`;
-    }
-
-    private Token: string;
-
-    GetQueryString(): string {
-        return this.Token;
+    GetQueryString() {
+        var token = this.Source!.Token.GetQueryString();
+        
+        return `SELECT * FROM ${this.Entity.constructor.name} ${token}`;
     }
 }
 
 
-export class QueryEntitySet<TEntity extends EntityBase<TEntity>, TReturn extends EntityBase<TReturn>> extends EntitySet<TReturn> {
-    constructor (returnType: { new(): TReturn }, public From: EntitySet<TEntity>, public Query: { (token: TokenEntitySet<TEntity>): EntitySet<TReturn> }) {
+export class QueryEntitySet<TEntity, TReturn> extends EntitySet<TReturn> {
+    constructor (returnType: { new(): TReturn }, public From: EntityItem<TEntity>, public Query: { (token: TEntity & ITokenEntity): EntityItem<TReturn> }) {
         super(returnType);
     }
 
     GetQueryString(): string {
-        return this.Query(this.From.Source.Token).GetQueryString();
+        return this.Query(this.From.Source!.Token).GetQueryString();
     }
 }
 
 
-export class TableEntitySet<TEntity extends EntityBase<TEntity>> extends EntitySet<TEntity> {
-    constructor (entityType: { new(): TEntity }) {
-        super(entityType);
+export class TakeEntitySet<TEntity> extends EntitySet<TEntity> {
+    constructor (public From: EntitySet<TEntity>, public TakeAmount: number) {
+        super(From.EntityType);
+
+        if (!(From instanceof TableEntitySet)) {
+            this.Source = new SourceEntitySet(this.From);
+            this.Resourced = true;
+        } else {
+            this.Source = From.Source;
+        }
     }
 
-    GetQueryString() {
-        return `SELECT * FROM ${this.Entity.__Config.Table} ${this.Source.Token.GetQueryString()}`;
-    }
-}
-
-
-export class TakeEntitySet<TEntity extends EntityBase<TEntity>> extends EntitySet<TEntity> {
-    constructor (entityType: { new(): TEntity }, public From: EntitySet<TEntity>, public TakeAmount: number) {
-        super(entityType);
-
-        this.Source = From.Source;
-    }
+    Resourced = false;
 
     GetQueryString(): string {
-        let fromQueryString = this.From.GetQueryString();
+        let source = this.Source!.GetQueryString();
 
-        if (this.From instanceof TakeEntitySet) {
-            return `${fromQueryString.substring(0, fromQueryString.lastIndexOf(' '))} ${this.TakeAmount}`;
+        if (this.Resourced) {
+            return `SELECT * FROM (${source}) ${this.Source!.Token.GetQueryString()} LIMIT ${this.TakeAmount}`;
         }
 
-        return `${fromQueryString} LIMIT ${this.TakeAmount}`;
+        return `${source} LIMIT ${this.TakeAmount}`;
     }
 
     public get IsTake(): boolean {
@@ -136,11 +156,11 @@ export class TakeEntitySet<TEntity extends EntityBase<TEntity>> extends EntitySe
 }
 
 
-export class SelectEntitySet<TFromEntity extends EntityBase<TFromEntity>, TToEntity extends EntityBase<TToEntity>> extends EntitySet<TToEntity> {
-    constructor (returnType: { new(): TToEntity }, public From: EntitySet<TFromEntity>, public Query: QueryEntitySet<TFromEntity, TToEntity>) {
+export class SelectEntitySet<TFromEntity, TToEntity> extends EntitySet<TToEntity> {
+    constructor (returnType: { new(): TToEntity }, public From: EntityItem<TFromEntity>, public Query: QueryEntitySet<TFromEntity, TToEntity>) {
         super(returnType);
 
-        this.FromSource = new SourceEntitySet<TFromEntity>(this.From.EntityType, this.From);
+        this.FromSource = new SourceEntitySet<TFromEntity>(this.From);
         this.Source = this.Query.Source;
     }
 
@@ -152,7 +172,7 @@ export class SelectEntitySet<TFromEntity extends EntityBase<TFromEntity>, TToEnt
 }
 
 
-export class ReferenceEntitySet<TFromEntity extends EntityBase<TFromEntity>, TToEntity extends EntityBase<TToEntity>> extends EntitySet<TToEntity> {
+export class ReferenceEntitySet<TFromEntity extends object, TToEntity extends object> extends EntitySet<TToEntity> {
     constructor (public From: EntitySet<TFromEntity>, public FromColumn: string, toEntityType: { new(): TToEntity }, public ToColumn: string = "Id") {
         super(toEntityType);
 
@@ -167,9 +187,9 @@ export class ReferenceEntitySet<TFromEntity extends EntityBase<TFromEntity>, TTo
 }
 
 
-export class ConditionEntitySet<TEntity extends EntityBase<TEntity>, TCondition extends EntityBase<TCondition>> extends EntitySet<TEntity> {
-    constructor (entityType: { new(): TEntity }, public For: EntitySet<TEntity>, public Condition: EntitySet<TCondition>) {
-        super(entityType);
+export class ConditionEntitySet<TEntity, TCondition> extends EntitySet<TEntity> {
+    constructor (public For: EntitySet<TEntity>, public Condition: EntitySet<TCondition>) {
+        super(For.EntityType);
 
         this.Source = this.For.Source;
     }
@@ -191,16 +211,18 @@ export class ConditionEntitySet<TEntity extends EntityBase<TEntity>, TCondition 
 }
 
 
-export abstract class Column<TColumn extends boolean | number | string | null> extends EntityItem<TColumn> {
+export abstract class Column<TColumn extends boolean | number | string | null> implements IEntityQuery {
     constructor (public GetColumn: { (): string }) {
-        super();
+        
     }
 
-    public abstract GetQueryString(): string;
+    public GetQueryString(): string {
+        return this.GetColumn();
+    }
 }
 
 
-export class EntityColumn<TEntity extends EntityBase<TEntity>, TColumn extends boolean | number | string | null = string> extends Column<TColumn> {
+export class EntityColumn<TEntity, TColumn extends boolean | number | string | null = string> extends Column<TColumn> {
     constructor (public Of: EntitySet<TEntity>, getColumn: { (): string }) {
         super(getColumn);
     }
@@ -211,14 +233,14 @@ export class EntityColumn<TEntity extends EntityBase<TEntity>, TColumn extends b
 }
 
 
-export class FunctionEntityColumn<TEntity extends EntityBase<TEntity>, TColumn extends boolean | number | string = number> extends EntityColumn<TEntity, TColumn> {
+export class FunctionEntityColumn<TEntity, TColumn extends boolean | number | string = number> extends EntityColumn<TEntity, TColumn> {
     constructor (public Of: EntitySet<TEntity>, public GetFunction: { (): string }) {
         super(Of, GetFunction);
     }
 }
 
 
-export class CountFunctionEntityColumn<TEntity extends EntityBase<TEntity>> extends FunctionEntityColumn<TEntity, number> {
+export class CountFunctionEntityColumn<TEntity> extends FunctionEntityColumn<TEntity, number> {
     constructor (public Of: EntitySet<TEntity>) {
         super(Of, () => 'COUNT()');
     }

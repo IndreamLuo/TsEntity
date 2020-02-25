@@ -1,6 +1,6 @@
-import { EntityBase, TableEntitySet } from "./entity-set";
-export declare class DBContext {
-    Repository<TEntity extends EntityBase<TEntity>>(entityType: {
+import { TableEntitySet } from "./entity-set";
+export declare class DbContext {
+    Select<TEntity extends object>(entityType: {
         new (): TEntity;
     }): TableEntitySet<TEntity>;
 }

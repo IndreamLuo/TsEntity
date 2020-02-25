@@ -1,5 +1,4 @@
-import { EntityBase } from "../../entity-set";
-export declare class Company extends EntityBase<Company> {
+export declare class Company {
     id: number;
     name: string;
 }
