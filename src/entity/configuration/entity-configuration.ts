@@ -5,7 +5,7 @@ export class EntityConfiguration {
         
     }
 
-    Table: string = this.Constructor.name;
+    Table: string = this.Constructor.name.toUpperCase();
     Id: EntityColumnConfiguration = EntityColumnConfiguration.Unknown;
     Columns: { [key: string]: EntityColumnConfiguration } = {}
     Relationships: { [key: string]: EntityRelationshipConfiguration } = {}

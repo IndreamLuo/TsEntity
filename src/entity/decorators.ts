@@ -4,7 +4,7 @@ export function table(tableName: string | null = null) {
   return (constructor: any) => {
     let configuration = EntityConfiguration.Get(constructor);
     
-    tableName && (configuration.Table = tableName);
+    tableName && (configuration.Table = tableName.toUpperCase());
 
     return constructor;
   }
