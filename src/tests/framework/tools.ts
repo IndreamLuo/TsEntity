@@ -1,9 +1,23 @@
-export function assert(assertion: boolean | Function, errorMessage: string | null = null) {
-    if (assertion instanceof Function) {
-        assertion = assertion();
+export class Assert {
+    static IsTrue(assertion: any, errorMessage: string = `[${assertion}] is not TRUE.`) {
+        if (assertion instanceof Function) {
+            assertion = assertion();
+        }
+    
+        if (!assertion) {
+            throw new Error(errorMessage);
+        }
     }
 
-    if (!assertion) {
-        throw new Error(errorMessage || `Value doesn't match condition.`);
+    static IsFalse(assertion: any, errorMessage: string = `[${assertion}] is not FALSE.`) {
+        this.IsTrue(!assertion, errorMessage);
+    }
+
+    static AreEqual(left: any, right: any, errorMessage: string = `[${left}] is not equal to [${right}].`) {
+        return this.IsTrue(left == right, errorMessage);
+    }
+
+    static AreNotEqual(left: any, right: any, errorMessage: string = `[${left}] is equal to [${right}].`) {
+        return this.IsFalse(left == right, errorMessage);
     }
 }

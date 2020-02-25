@@ -10,21 +10,31 @@ export class TestApplication {
 
         Object.keys(TestConfiguration.TestClasses).forEach(key => {
             TestConfiguration.TestClasses[key].forEach(testClass => {
+                let allOfClass = 0;
+                let successOfClass = 0;
+                let failedOfClass = 0;
+
                 let tests = new testClass.Constructor();
                 testClass.Tests.forEach(test => {
-                    all++;
+                    allOfClass++;
 
                     try {
                         tests[test]();
-                        success++;
+                        successOfClass++;
                     } catch(error) {
-                        failed++;
+                        failedOfClass++;
                         console.error(error);
                     }
                 });
+                
+                console.info(`[${tests.constructor.name}]: Success(${successOfClass}/${allOfClass}) | Failed(${failedOfClass}/${allOfClass})`);
+
+                all += allOfClass;
+                success += successOfClass;
+                failed += failedOfClass;
             });
         });
 
-        console.info(`Success: ${success}/${all} | Failed: ${failed}/${all}`);
+        console.info(`All: Success(${success}/${all}) | Failed(${failed}/${all})`);
     }
 }

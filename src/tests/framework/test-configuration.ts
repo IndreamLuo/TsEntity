@@ -13,7 +13,7 @@ export class TestConfiguration {
         let classes = (this.TestClasses[constructor.name] = this.TestClasses[constructor.name] || []);
 
         for (let index in classes) {
-            if (classes[index].constructor == constructor) {
+            if (classes[index].Constructor == constructor) {
                 return classes[index];
             }
         }
