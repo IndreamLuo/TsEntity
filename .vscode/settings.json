@@ -1,9 +1,0 @@
-{
-    "sqltools.connections": [
-        {
-            "database": "C:\\Development\\GitHub\\Mirror\\Mirror.Web\\Mirror.db",
-            "dialect": "SQLite",
-            "name": "Mirror"
-        }
-    ]
-}
