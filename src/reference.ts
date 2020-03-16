@@ -1,5 +1,5 @@
 import "reflect-metadata";
-import { ReferenceEntitySet } from "./entity-set";
+import { ReferenceEntitySet } from "./entity/entity-set-domain";
 
 export function One<TToEntity extends object>(toEntity: () => { new(): TToEntity }, fromColumn: string | undefined = undefined, toColumn: string | undefined = undefined) {
     return function(target: object, property: string) {
