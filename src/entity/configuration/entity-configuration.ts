@@ -1,7 +1,7 @@
 import { EntityColumnConfiguration, EntityIdConfiguration, EntityRelationshipConfiguration } from "./entity-column-configuration";
 
 export class EntityConfiguration {
-    constructor (public Constructor: any) {
+    constructor (public Constructor: Function) {
         
     }
 

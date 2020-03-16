@@ -28,9 +28,11 @@ export function id(columnName: string = 'Id') {
 
 export function one<T>(type: { new(...args: any[]): T }, foreignKey: string | null = null) {
   return function (object: Object, propertyName: string) {
+    foreignKey = foreignKey || `${propertyName}Id`;
+    
     EntityConfiguration
       .Get(object.constructor)
-      .SetOne(propertyName, foreignKey || `${propertyName}Id`, type);
+      .SetOne(propertyName, foreignKey, type);
   }
 }
 

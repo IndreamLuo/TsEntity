@@ -21,4 +21,9 @@ export class EntitiesTests {
         Assert.AreEqual(EntityConfiguration.Get(Employee).Relationships["COMPANY"].Name, 'COMPANY');
         Assert.AreEqual(EntityConfiguration.Get(Employee).Relationships["COMPANY"].Many, false);
     }
+
+    @test()
+    GetEmployeeCompany() {
+        
+    }
 }
