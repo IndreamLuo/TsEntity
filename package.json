@@ -19,10 +19,10 @@
   },
   "homepage": "https://github.com/IndreamLuo/TsEntity#readme",
   "devDependencies": {
-    "sqlite3": "^4.1.1"
+    "sqlite3": "^4.2.0"
   },
   "dependencies": {
-    "@types/node": "^13.9.1",
+    "@types/node": "^13.13.16",
     "reflect-metadata": "^0.1.13"
   }
 }

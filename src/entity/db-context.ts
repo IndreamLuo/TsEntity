@@ -10,7 +10,7 @@ export class Sqlite3DbContext extends DbContext {
     constructor (public DbPath: string) {
         super();
 
-        let sqlite3 = require('sqlite3');
+        let sqlite3 = require('sqlite3').verbose();
         this.Database = new sqlite3.Database(this.DbPath, sqlite3.OPEN_READWRITE);
     }
 
