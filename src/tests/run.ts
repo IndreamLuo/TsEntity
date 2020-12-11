@@ -5,6 +5,6 @@ import { DbContextTests } from "./db-context-tests";
 
 TestApplication.Include(HelloWorldTests);
 TestApplication.Include(EntitiesTests);
-TestApplication.Include(DbContextTests);
+// TestApplication.Include(DbContextTests);
 
 TestApplication.RunAllTests();

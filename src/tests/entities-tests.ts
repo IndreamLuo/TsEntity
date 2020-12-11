@@ -1,29 +1,32 @@
+import { tests, test } from "./framework/decorators";
+import { Assert } from "./framework/tools";
+import { Schema } from "../schema/schema";
 import { Company } from "./entities/company";
 import { Employee } from "./entities/employee";
-import { EntityConfiguration } from "../entity/configuration/entity-configuration";
-import { Assert } from "./framework/tools";
-import { tests, test } from "./framework/decorators";
 
 @tests()
 export class EntitiesTests {
     @test()
     CheckConfigurations() {
-        Assert.AreEqual(EntityConfiguration.Get(Company).Table, 'COMPANY');
-        Assert.AreEqual(EntityConfiguration.Get(Company).Id.Name, 'ID');
-        Assert.AreEqual(EntityConfiguration.Get(Company).Columns['ID'].Name, 'ID');
-        Assert.AreEqual(EntityConfiguration.Get(Company).Columns['NAME'].Name, 'NAME');
-        Assert.AreEqual(EntityConfiguration.Get(Company).Relationships['EMPLOYEES'].Name, 'EMPLOYEES');
-        Assert.AreEqual(EntityConfiguration.Get(Company).Relationships['EMPLOYEES'].Many, true);
+        Assert.AreEqual(Schema.Base.Entities[Company.name].Constructor, Company);
+        Assert.AreEqual(Schema.Base.Entities[Company.name].Name, "Company");
+        Assert.AreEqual(Schema.Base.Entities[Employee.name].Constructor, Employee);
+        Assert.AreEqual(Schema.Base.Entities[Employee.name].Name, "Employee");
+        
+        let companyDiagram = Schema.Base.GetOrAddEntity(Company);
+        let employeeDiagram = Schema.Base.GetOrAddEntity(Employee);
 
-        Assert.AreEqual(EntityConfiguration.Get(Employee).Table, 'EMPLOYEE');
-        Assert.AreEqual(EntityConfiguration.Get(Employee).Id.Name, '_UNKNOWN');
-        Assert.AreEqual(EntityConfiguration.Get(Employee).Columns["COMPANYID"].Name, 'COMPANYID');
-        Assert.AreEqual(EntityConfiguration.Get(Employee).Relationships["COMPANY"].Name, 'COMPANY');
-        Assert.AreEqual(EntityConfiguration.Get(Employee).Relationships["COMPANY"].Many, false);
+        Assert.AreEqual(companyDiagram.Ids.length, 1);
+        Assert.AreEqual(companyDiagram.Ids[0].Name, 'Id');
+        Assert.AreEqual(Object.keys(companyDiagram.Columns).length, 2);
+        Assert.AreEqual(companyDiagram.Columns['Id'].Name, 'Id');
+        Assert.AreEqual(companyDiagram.Columns['Name'].Name, 'Name');
+
+        Assert.AreEqual(employeeDiagram.Ids.length, 0);
     }
 
     @test()
     GetEmployeeCompany() {
-        
+        //To be finished
     }
 }

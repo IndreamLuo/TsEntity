@@ -23,7 +23,9 @@ export class TestApplication {
                         successOfClass++;
                     } catch(error) {
                         failedOfClass++;
+                        console.error();
                         console.error(error);
+                        console.error();
                     }
                 });
                 
