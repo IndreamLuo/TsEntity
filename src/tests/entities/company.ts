@@ -1,14 +1,14 @@
-import { table, column, id, many } from "../../entity/decorators";
+import { column, entity, id, many } from "../../schema/decorators";
 import { Employee } from "./employee";
 
-@table('Company')
+@entity()
 export class Company {
     @id()
     Id!: number;
 
-    @column('Name')
+    @column()
     Name!: string;
 
-    @many(Employee)
+    @many(() => Employee)
     Employees!: Employee[];
 }
