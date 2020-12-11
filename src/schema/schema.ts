@@ -1,4 +1,4 @@
-import { ConstructorType } from "./constructor-type";
+import { ConstructorType } from "../utilities/types/constructor-type";
 import { EntityDiagram } from "./entity-diagram";
 import { RelationshipDiagram } from "./relationship-diagram";
 
