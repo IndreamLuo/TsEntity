@@ -3,8 +3,7 @@ import { EntityDiagram } from "./entity-diagram";
 import { RelationshipDiagram } from "./relationship-diagram";
 
 export class Schema {
-    constructor () {
-    }
+    constructor () {}
 
     static Base: Schema = new Schema();
 

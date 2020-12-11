@@ -1,7 +1,6 @@
-import { EntityConfiguration } from "../entity/configuration/entity-configuration";
 import { tests, test } from "./framework/decorators";
-import { Schema } from "../schema/schema";
 import { Assert } from "./framework/tools";
+import { Schema } from "../schema/schema";
 import { Company } from "./entities/company";
 import { Employee } from "./entities/employee";
 
@@ -28,6 +27,6 @@ export class EntitiesTests {
 
     @test()
     GetEmployeeCompany() {
-        
+        //To be finished
     }
 }
