@@ -1,5 +1,5 @@
 import { tests, test } from "./framework/decorators";
-import { Assert } from "./framework/tools";
+import { Assert } from "./framework/assert";
 import { Schema } from "../schema/schema";
 import { Company } from "./entities/company";
 import { Employee } from "./entities/employee";

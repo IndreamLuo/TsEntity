@@ -62,3 +62,4 @@ typings/
 .vscode/
 lib/
 src/tests/*.db
+src/*.js
