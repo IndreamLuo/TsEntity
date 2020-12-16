@@ -1,10 +1,12 @@
-import { NumberDictionary } from "../types/dictionaries";
-import { ExpressionTreeNode } from "./expression-tree-node";
+import { NumberDictionary } from "../../types/dictionaries";
+import { ExpressionTreeNode } from "../expression-tree-node";
 
-export class Lexer {
-    constructor (public Name: string, ...subLexers: (string | Lexer | (() => Lexer))[]) {
-        this.SubLexers = subLexers;
-    }
+export class Lexer<T> {
+    constructor (
+        public Name: string,
+        public SubLexers: (string | Lexer<any> | (() => Lexer<any>))[] | string,
+        public OnExpressionTreeNodeGenerated: (node: ExpressionTreeNode<T>) => T
+    ) {}
 
     Id: number = ++Lexer.IdCounter;
     static IdCounter = 0;
@@ -28,15 +30,15 @@ export class Lexer {
         } else {
             !generated && (generatedLexers[this.Id] = true);
 
-            regularExpression = this.SubLexers.length === 1 && typeof(this.SubLexers[0]) === "string"
-                ? this.SubLexers[0]
-                : this.SubLexers.map(getLexer => {
+            regularExpression = typeof(this.SubLexers) === "string"
+                ? this.SubLexers
+                : (this.SubLexers as []).map(getLexer => {
                     if (typeof(getLexer) === "string") {
                         return getLexer;
                     }
 
-                    let lexer: Lexer = typeof(getLexer) === 'function'
-                    ? getLexer()
+                    let lexer: Lexer<any> = typeof(getLexer) === 'function'
+                    ? (getLexer as Function)()
                     : getLexer;
                     
                     let subLexer = lexer.GenerateRegExp(generatedLexers);
@@ -50,19 +52,21 @@ export class Lexer {
         return `(${regularExpression})`;
     }
 
-    SubLexers: (string | Lexer | (() => Lexer))[];
-
-    TryParse(script: string): ExpressionTreeNode | false {
+    TryParse(script: string): ExpressionTreeNode<T> | false {
         let matches = this.RegExp.exec(script);
 
         if (!matches || !matches.length || matches.shift() != script) {
             return false;
         }
 
-        return this.ParseMatches(matches);
+        let node = this.ParseMatches(matches);
+
+        node.Expression = this.OnExpressionTreeNodeGenerated(node);
+
+        return node;
     }
 
-    Parse(script: string): ExpressionTreeNode {
+    Parse(script: string): ExpressionTreeNode<T> {
         let tryParse = this.TryParse(script);
 
         if (tryParse) {
@@ -72,7 +76,7 @@ export class Lexer {
         throw SyntaxError(`Cannot match script:\n${script}\nwith RegExp:\n${this.RegExp.source}`);
     }
 
-    private ParseMatches(matches: RegExpExecArray, parsedLexers: NumberDictionary<Boolean> = {}): ExpressionTreeNode {
+    private ParseMatches(matches: RegExpExecArray, parsedLexers: NumberDictionary<Boolean> = {}): ExpressionTreeNode<T> {
         let parsed = parsedLexers[this.Id];
         let match = matches.shift() as string;
 
@@ -82,16 +86,16 @@ export class Lexer {
 
         !parsed && (parsedLexers[this.Id] = true);
 
-        let expressionTreeNode = new ExpressionTreeNode(this.Name, match);
+        let expressionTreeNode = new ExpressionTreeNode<T>(this.Name, match);
 
-        if (this.SubLexers.length > 1 || typeof(this.SubLexers[0]) !== 'string') {
-            this.SubLexers.forEach(getLexer => {
+        if (typeof(this.SubLexers) !== 'string') {
+            (this.SubLexers as []).forEach(getLexer => {
                 if (typeof(getLexer) === 'string') {
                     return;
                 }
                 
-                let lexer: Lexer = typeof(getLexer) === 'function'
-                    ? getLexer()
+                let lexer: Lexer<T> = typeof(getLexer) === 'function'
+                    ? (getLexer as Function)()
                     : getLexer;
 
                 let parseSubTokens = lexer.ParseMatches(matches, parsedLexers);

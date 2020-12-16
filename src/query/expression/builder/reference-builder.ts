@@ -1,5 +1,4 @@
 import { Schema } from "../../../schema/schema";
-import { ExpressionTreeNode } from "../../../utilities/lexer/expression-tree-node";
 import { LambdaLexers } from "../../../utilities/lexer/lambda-lexers";
 import { EntityExpressionBase } from "../expressions/base/entity-expression-base";
 import { ExpressionBase } from "../expressions/base/expression-base";
@@ -17,24 +16,11 @@ EntityExpressionBase.prototype.Reference = function <T, TTo>(to: (from: T) => TT
     let toExpression = to.toString();
     let expressionTreeNode = LambdaLexers.SelectFieldLambda.Parse(toExpression);
     
-    let toFieldName = GetFieldFromExpressionTreeNode(expressionTreeNode);
+    let toFieldName = expressionTreeNode.Expression.Field;
 
     let relationship = Schema.Base.Relationships[entityDiagram.Name][toFieldName];
 
     let toEntity = Schema.Base.GetOrAddEntity(relationship.GetToType());
 
     return new ReferenceExpression(toEntity.Constructor, this, relationship);
-}
-
-function GetFieldFromExpressionTreeNode(expressionTreeNode: ExpressionTreeNode) {
-    let selectFieldWithBrackets = expressionTreeNode[3];
-
-    while (!selectFieldWithBrackets[0].length) {
-        selectFieldWithBrackets = selectFieldWithBrackets[1];
-    }
-
-    let selectField = selectFieldWithBrackets;
-    let field = selectField[2];
-
-    return field.Value;
 }
