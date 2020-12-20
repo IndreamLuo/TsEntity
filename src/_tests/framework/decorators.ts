@@ -1,3 +1,4 @@
+import { ConstructorType } from "../../utilities/types/constructor-type";
 import { TestConfiguration } from "./test-configuration";
 
 export function tests() {
@@ -10,6 +11,6 @@ export function tests() {
 
 export function test() {
     return (object: Object, propertyName: string) => {
-        TestConfiguration.AddTest(object.constructor as { new(): any }, propertyName);
+        TestConfiguration.AddTest(object.constructor as ConstructorType<any>, propertyName);
     }
 }

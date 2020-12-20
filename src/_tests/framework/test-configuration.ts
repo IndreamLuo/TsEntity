@@ -1,3 +1,5 @@
+import { ConstructorType } from "../../utilities/types/constructor-type";
+
 export class TestClassConfiguration {
     constructor (public Constructor: { new(): any }) { }
 
@@ -9,7 +11,7 @@ export class TestConfiguration {
         [key: string]: TestClassConfiguration[]
     } = {};
 
-    static AddAndGetTestClass(constructor: { new(): any }): TestClassConfiguration {
+    static AddAndGetTestClass(constructor: ConstructorType<any>): TestClassConfiguration {
         let classes = (this.TestClasses[constructor.name] = this.TestClasses[constructor.name] || []);
 
         for (let index in classes) {
@@ -25,7 +27,7 @@ export class TestConfiguration {
         return result;
     }
 
-    static AddTest(constructor: { new(): any }, test: string) {
+    static AddTest(constructor: ConstructorType<any>, test: string) {
         let testClass = this.AddAndGetTestClass(constructor);
         testClass.Tests.push(test);
     }

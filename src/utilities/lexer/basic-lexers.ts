@@ -1,4 +1,4 @@
-import { SelectFieldExpression } from "./expressions.ts/SelectFieldExpression";
+import { SelectFieldExpression } from "./expressions.ts/select-field-expression";
 import { Lexer } from "./lexers/lexer";
 import { StringLexer } from "./lexers/string-lexer";
 

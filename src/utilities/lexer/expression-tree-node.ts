@@ -3,5 +3,5 @@ export class ExpressionTreeNode<T> extends Array<ExpressionTreeNode<any>> {
         super();
     }
 
-    Expression!: T;
+    Expression?: T;
 }

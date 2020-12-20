@@ -1,42 +1,43 @@
 import { Assure } from "../assure";
 import { BasicLexers } from "./basic-lexers";
-import { SelectFieldExpression } from "./expressions.ts/SelectFieldExpression";
+import { SelectFieldExpression } from "./expressions.ts/select-field-expression";
 import { Lexer } from "./lexers/lexer";
 
 export class LambdaLexers {
-    static ExtraParameter = new Lexer(
+    static ExtraParameter = new Lexer<string>(
         "ExtraParameter",
         [BasicLexers.CodeBreak, ',', BasicLexers.CodeBreak, BasicLexers.Identifier],
-        node => {
-            node.Expression = node[2].Expression
-        }
+        node => node[2].Expression
     );
 
     static ExtraParameters: Lexer<string[]> = new Lexer(
         "ExtraParameters",
-        [BasicLexers.Empty, '|', LambdaLexers.ExtraParameter, () => LambdaLexers.ExtraParameters],
+        [LambdaLexers.ExtraParameter, '*'],
         node => {
-            let expression = [];
+            let expression = node.map(subNode => subNode.Expression!);
 
-            if (node[1].Expression) {
-                expression.push(node[1].Expression);
-            }
-            if (node[2].Expression) {
-                expression.concat(node[2].Expression);
-            }
+            expression.forEach((item1, index1) => {
+                expression.forEach((item2, index2) => {
+                    index1 != index2 && Assure.AreNotEqual(item1, item2, () => `Replicated parameter [${item1}].`);
+                });
+            });
 
             return expression;
         });
 
-    static Parameters = new Lexer(
+    static Parameters = new Lexer<string[]>(
         "Parameters",
         [BasicLexers.Identifier, LambdaLexers.ExtraParameters],
-        node => [node[0]].concat(node[1].Expression));
+        node => {
+            Assure.IsNotIn(node[0].Expression, node[1].Expression, () => `Replicated parameter [${node[0].Expression}].`);
+
+            return [node[0].Expression].concat(node[1].Expression)
+        });
 
     static SelectFieldWithBrackets: Lexer<SelectFieldExpression> = new Lexer(
-        "SelectFieldBody",
-        [BasicLexers.SelectField, '|', '(', () => LambdaLexers.SelectFieldWithBrackets, ')'],
-        node => node[0].Expression || node[1].Expression);
+        "SelectFieldWithBrackets",
+        [BasicLexers.SelectField, '|', '\\(', BasicLexers.CodeBreak, () => LambdaLexers.SelectFieldWithBrackets, BasicLexers.CodeBreak, '\\)'],
+        node => node[0].Expression || node[2].Expression);
 
     static SelectFieldLambda = new Lexer<SelectFieldExpression>(
         "SelectField",
@@ -44,8 +45,8 @@ export class LambdaLexers {
         node => {
             Assure.AreEqual(
                 node[0].Expression,
-                node[3].Expression.Field,
-                () => `"${node[0].Expression}" and "${node[3].Expression.Field}" are not equal. A select-field lambda should be using the parameter input.`);
+                node[3].Expression.Identifier,
+                () => `"${node[0].Expression}" and "${node[3].Expression.Identifier}" are not equal. A select-field lambda should be using the parameter input.`);
 
             return node[3].Expression;
         });

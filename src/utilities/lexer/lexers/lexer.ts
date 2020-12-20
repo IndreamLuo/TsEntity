@@ -5,7 +5,7 @@ export class Lexer<T> {
     constructor (
         public Name: string,
         public SubLexers: (string | Lexer<any> | (() => Lexer<any>))[] | string,
-        public OnExpressionTreeNodeGenerated: (node: ExpressionTreeNode<T>) => T
+        public GenerateExpressionForNode: (node: ExpressionTreeNode<T>) => T
     ) {}
 
     Id: number = ++Lexer.IdCounter;
@@ -13,26 +13,52 @@ export class Lexer<T> {
 
     get RegExp(): RegExp {
         if (!this._regExp) {
-            this._regExp = new RegExp(`^${this.GenerateRegExp()}$`);
+            this._regExp = new RegExp(this.GenerateRegExp()!);
         }
 
         return this._regExp;
     }
 
-    private _regExp: RegExp | null = null;
+    private _regExp?: RegExp;
+
+    get RegExpWithBorder(): RegExp {
+        if (!this._regExpWithBorder) {
+            this._regExpWithBorder = new RegExp(`^${this.RegExp.source}$`);
+        }
+
+        return this._regExpWithBorder;
+    }
+
+    private _regExpWithBorder?: RegExp;
+
+    get RegExpForRecursive(): RegExp {
+        if (!this._regExpForRecursive) {
+            this._regExpForRecursive = new RegExp(`(${this.SubExpressions!.map(subExpression => subExpression !== undefined ? subExpression : '[\\s\\S]*').join('')})`);
+        }
+
+        return this._regExpForRecursive;
+    }
+
+    private _regExpForRecursive?: RegExp;
+
+    SubExpressions?: (string | undefined)[];
 
     GenerateRegExp(generatedLexers: NumberDictionary<Boolean> = {}) {
-        let regularExpression: string;
         let generated = generatedLexers[this.Id];
 
         if (generated) {
-            regularExpression = '.*';
-        } else {
-            !generated && (generatedLexers[this.Id] = true);
+            return undefined;
+        }
+    
+        generatedLexers[this.Id] = true;
 
-            regularExpression = typeof(this.SubLexers) === "string"
-                ? this.SubLexers
-                : (this.SubLexers as []).map(getLexer => {
+        let regularExpression: string;
+
+        if (typeof(this.SubLexers) === "string") {
+            regularExpression = this.SubLexers;
+        } else {
+            this.SubExpressions = this.SubExpressions
+                || (this.SubLexers as []).map(getLexer => {
                     if (typeof(getLexer) === "string") {
                         return getLexer;
                     }
@@ -44,26 +70,28 @@ export class Lexer<T> {
                     let subLexer = lexer.GenerateRegExp(generatedLexers);
                     
                     return subLexer;
-                }).join('');
-        }
+                });
 
-        !generated && (generatedLexers[this.Id] = false);
+            regularExpression = this.SubExpressions
+                .map(expression => expression !== undefined
+                    ? expression
+                    : `(()|${this.RegExpForRecursive.source})`)
+                .join('');
+        }
+        
+        generatedLexers[this.Id] = false;
 
         return `(${regularExpression})`;
     }
 
     TryParse(script: string): ExpressionTreeNode<T> | false {
-        let matches = this.RegExp.exec(script);
+        let matches = this.RegExpWithBorder.exec(script);
 
         if (!matches || !matches.length || matches.shift() != script) {
             return false;
         }
 
-        let node = this.ParseMatches(matches);
-
-        node.Expression = this.OnExpressionTreeNodeGenerated(node);
-
-        return node;
+        return this.ParseMatches(matches)!;
     }
 
     Parse(script: string): ExpressionTreeNode<T> {
@@ -73,37 +101,65 @@ export class Lexer<T> {
             return tryParse;
         }
 
-        throw SyntaxError(`Cannot match script:\n${script}\nwith RegExp:\n${this.RegExp.source}`);
+        throw SyntaxError(`Cannot match script:"${script}" with RegExp:\\${this.RegExp.source}\\`);
     }
 
-    private ParseMatches(matches: RegExpExecArray, parsedLexers: NumberDictionary<Boolean> = {}): ExpressionTreeNode<T> {
+    private ParseMatches(matches: string[], parsedLexers: NumberDictionary<Boolean> = {}): ExpressionTreeNode<T> {
         let parsed = parsedLexers[this.Id];
         let match = matches.shift() as string;
 
-        if (parsed) {
-            return this.Parse(match);
-        }
-
-        !parsed && (parsedLexers[this.Id] = true);
-
         let expressionTreeNode = new ExpressionTreeNode<T>(this.Name, match);
 
-        if (typeof(this.SubLexers) !== 'string') {
-            (this.SubLexers as []).forEach(getLexer => {
-                if (typeof(getLexer) === 'string') {
-                    return;
-                }
-                
-                let lexer: Lexer<T> = typeof(getLexer) === 'function'
-                    ? (getLexer as Function)()
-                    : getLexer;
-
-                let parseSubTokens = lexer.ParseMatches(matches, parsedLexers);
-                expressionTreeNode.push(parseSubTokens);
+        if (parsed) {
+            [...this.RegExpForRecursive.source.matchAll(/\((?<!\?)/g)].forEach(() => {
+                matches.shift();
             });
-        }
 
-        !parsed && (parsedLexers[this.Id] = false);
+            if (match !== undefined) {
+                return this.Parse(match);
+            }
+        } else {
+            parsedLexers[this.Id] = true;
+
+            if (typeof(this.SubLexers) !== 'string') {
+                (this.SubLexers as []).forEach((getLexer, index) => {
+                    if (typeof(getLexer) === 'string') {
+                        return;
+                    }
+                    
+                    let lexer: Lexer<T> = typeof(getLexer) === 'function'
+                        ? (getLexer as Function)()
+                        : getLexer;
+
+                    let nextChar = index + 1 < this.SubLexers.length
+                        && typeof(this.SubLexers[index + 1]) === 'string'
+                        && ('?+*'.indexOf((this.SubLexers[index + 1] as string)[0]) + 1);
+                    
+                    if (nextChar) {
+                        [...lexer.RegExp.source.matchAll(/\((?<!\?)/g)].forEach(() => {
+                            matches.shift();
+                        });
+
+                        let subMatches = [...match.matchAll(new RegExp(lexer.RegExp.source, 'g'))];
+                        subMatches.forEach(iterateMatches => {
+                            iterateMatches.shift();
+                            let parseSubTokens = lexer.ParseMatches(iterateMatches);
+                            expressionTreeNode.push(parseSubTokens);
+                        });
+
+                        return;
+                    }
+
+                    let parseSubTokens = lexer.ParseMatches(matches, parsedLexers);
+                    expressionTreeNode.push(parseSubTokens);
+                });
+            }
+
+            match !== undefined
+                && (expressionTreeNode.Expression = this.GenerateExpressionForNode(expressionTreeNode));
+
+            parsedLexers[this.Id] = false;
+        }
 
         return expressionTreeNode;
     }

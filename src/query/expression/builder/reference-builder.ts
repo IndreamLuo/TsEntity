@@ -16,7 +16,7 @@ EntityExpressionBase.prototype.Reference = function <T, TTo>(to: (from: T) => TT
     let toExpression = to.toString();
     let expressionTreeNode = LambdaLexers.SelectFieldLambda.Parse(toExpression);
     
-    let toFieldName = expressionTreeNode.Expression.Field;
+    let toFieldName = expressionTreeNode.Expression!.Field;
 
     let relationship = Schema.Base.Relationships[entityDiagram.Name][toFieldName];
 
