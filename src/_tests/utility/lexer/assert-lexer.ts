@@ -54,7 +54,7 @@ export class AssertLexer {
                         return;
                     }
 
-                    if (!subLexer.TryParse(parse[lexerIndex].Value!)) {
+                    if (!subLexer.TryParse(parse[lexerIndex++].Value!)) {
                         index += 2;
                     }
                 } else {

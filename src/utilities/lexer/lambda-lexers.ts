@@ -1,6 +1,6 @@
 import { Assure } from "../assure";
 import { BasicLexers } from "./basic-lexers";
-import { SelectFieldExpression } from "./expressions.ts/select-field-expression";
+import { SelectFieldExpression } from "./expressions/select-field-expression";
 import { Lexer } from "./lexers/lexer";
 
 export class LambdaLexers {

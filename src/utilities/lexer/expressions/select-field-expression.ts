@@ -1,4 +1,4 @@
 export interface SelectFieldExpression {
-    Identifier: string;
+    Identifier: string | SelectFieldExpression;
     Field: string;
 }
