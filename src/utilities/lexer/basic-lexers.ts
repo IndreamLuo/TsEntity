@@ -22,10 +22,15 @@ export class BasicLexers {
     static IntegerValueWithoutSign = new NumberLexer('IntegerValueWithoutSign', '[1-9][\\d]*|0');
     static IntegerValue = new NumberLexer('IntegerValue', [BasicLexers.PlusMinusSignWithCodeBreak, '?', BasicLexers.IntegerValueWithoutSign]);
     static FractionalPart = new StringLexer('FractionalPart', ['.', BasicLexers.Digits]);
-    static FractionalPartOrEmpty = new StringLexer('', [BasicLexers.FractionalPart, '|', BasicLexers.Empty]);
+    static FractionalPartOrEmpty = new StringLexer('FractionalPartOrEmpty', [BasicLexers.FractionalPart, '|', BasicLexers.Empty]);
     static NumberValue = new NumberLexer('NumberValue', [BasicLexers.IntegerValue, BasicLexers.FractionalPartOrEmpty]);
     
     static StringValue = new StringLexer('StringValue', `"[\\s\\S]*"|'[\\s\\S]*'`, node => node.Value!.substring(1, node.Value!.length - 2));
+
+    static Value = new Lexer("Value",
+        [BasicLexers.BooleanValue, '|', BasicLexers.NumberValue, '|', BasicLexers.StringValue],
+        node => node.filter(subNode => subNode.Expression !== undefined)[0].Expression
+    );
 
     static SelectField = new Lexer<SelectFieldExpression>(
         'SelectField',

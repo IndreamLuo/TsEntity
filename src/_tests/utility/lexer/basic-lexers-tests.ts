@@ -1,3 +1,4 @@
+import { resourceUsage } from "process";
 import { BasicLexers } from "../../../utilities/lexer/basic-lexers";
 import { Assert } from "../../_framework/assert";
 import { test, tests } from "../../_framework/decorators";
@@ -81,7 +82,9 @@ export class BasicLexerTests {
         let stringValue3 = `''`;
         let stringValue4 = `'"`;
 
-        AssertLexer.CanParse(BasicLexers.BooleanValue, boolean1, boolean2);
+        AssertLexer.CanParse(BasicLexers.BooleanValue, boolean1, boolean2).forEach(result => {
+            Assert.AreEqual(result.Script, '' + result.Parse.Expression);
+        });
         AssertLexer.CannotParse(BasicLexers.BooleanValue, boolean3);
 
         AssertLexer.CanParse(BasicLexers.PlusMinusSign, plusMinusSign1, plusMinusSign2);
@@ -102,11 +105,23 @@ export class BasicLexerTests {
         AssertLexer.CanParse(BasicLexers.FractionalPartOrEmpty, fractionalPart1, fractionalPart2, fractionalPart3, fractionalPart4, empty);
         AssertLexer.CannotParse(BasicLexers.FractionalPart, fractionalPart5, fractionalPart6, fractionalPart7, integer1);
 
-        AssertLexer.CanParse(BasicLexers.NumberValue, ...numbers1);
+        AssertLexer.CanParse(BasicLexers.NumberValue, ...numbers1).forEach(result => {
+            Assert.AreEqual(parseFloat(result.Script.replace(BasicLexers.CodeBreak.RegExpForGlobalSearch, '')), result.Parse.Expression);
+        });
         AssertLexer.CannotParse(BasicLexers.NumberValue, ...numbers2);
 
         AssertLexer.CanParse(BasicLexers.StringValue, stringValue1, stringValue2, stringValue3);
         AssertLexer.CannotParse(BasicLexers.StringValue, stringValue4, integer1, empty);
+
+        AssertLexer.CanParse(BasicLexers.Value, boolean1, boolean2).forEach(result => {
+            Assert.AreEqual(result.Script, '' + result.Parse.Expression);
+        });
+        AssertLexer.CanParse(BasicLexers.Value, ...numbers1).forEach(result => {
+            Assert.AreEqual(parseFloat(result.Script.replace(BasicLexers.CodeBreak.RegExpForGlobalSearch, '')), result.Parse.Expression);
+        });
+        AssertLexer.CanParse(BasicLexers.Value, stringValue1, stringValue2, stringValue3).forEach(result => {
+            Assert.AreEqual(result.Script.substring(1, result.Script.length - 2), result.Parse.Expression);
+        });
     }
 
     @test()

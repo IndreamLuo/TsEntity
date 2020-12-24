@@ -153,12 +153,14 @@ export class Lexer<T> {
                     if (nextChar) {
                         this.ClearMatchesByMatchingString(matches, lexer.RegExp.source);
 
-                        let subMatches = [...match.matchAll(new RegExp(lexer.RegExp.source, 'g'))];
-                        subMatches.forEach(iterateMatches => {
-                            iterateMatches.shift();
-                            let parseSubTokens = lexer.ParseMatches(iterateMatches);
-                            expressionTreeNode.push(parseSubTokens);
-                        });
+                        if (match !== undefined) {
+                            let subMatches = [...match.matchAll(new RegExp(lexer.RegExp.source, 'g'))];
+                            subMatches.forEach(iterateMatches => {
+                                iterateMatches.shift();
+                                let parseSubTokens = lexer.ParseMatches(iterateMatches);
+                                expressionTreeNode.push(parseSubTokens);
+                            });
+                        }
 
                         return;
                     }
