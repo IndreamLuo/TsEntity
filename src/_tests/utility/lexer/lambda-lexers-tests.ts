@@ -1,6 +1,6 @@
 import { LambdaLexers } from "../../../utilities/lexer/lambda-lexers";
-import { Assert } from "../../framework/assert";
-import { test, tests } from "../../framework/decorators";
+import { Assert } from "../../_framework/assert";
+import { test, tests } from "../../_framework/decorators";
 import { AssertLexer } from "./assert-lexer";
 
 tests()

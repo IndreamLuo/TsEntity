@@ -1,6 +1,6 @@
 import { Company } from "./entities/company";
 import { DbContext, Sqlite3DbContext } from "../entity/db-context";
-import { tests, test } from "./framework/decorators";
+import { tests, test } from "./_framework/decorators";
 
 @tests()
 export class DbContextTests {

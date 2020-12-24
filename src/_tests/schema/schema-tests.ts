@@ -1,13 +1,15 @@
-import { tests, test } from "./framework/decorators";
-import { Assert } from "./framework/assert";
-import { Schema } from "../schema/schema";
-import { Company } from "./entities/company";
-import { Employee } from "./entities/employee";
+import { Schema } from "../../schema/schema";
+import { Company } from "../entities/company";
+import { Employee } from "../entities/employee";
+import { Assert } from "../_framework/assert";
+import { test, tests } from "../_framework/decorators";
 
 @tests()
-export class EntitiesTests {
+export class SchemaTests {
     @test()
-    CheckConfigurations() {
+    SchemaBuiltCorrectly() {
+        Assert.AreEqual(Object.keys(Schema.Base.Entities).length, 2);
+
         Assert.AreEqual(Schema.Base.Entities[Company.name].Constructor, Company);
         Assert.AreEqual(Schema.Base.Entities[Company.name].Name, "Company");
         Assert.AreEqual(Schema.Base.Entities[Employee.name].Constructor, Employee);
@@ -23,10 +25,5 @@ export class EntitiesTests {
         Assert.AreEqual(companyDiagram.Columns['Name'].Name, 'Name');
 
         Assert.AreEqual(employeeDiagram.Ids.length, 0);
-    }
-
-    @test()
-    GetEmployeeCompany() {
-        //To be finished
     }
 }

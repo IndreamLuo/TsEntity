@@ -1,15 +1,19 @@
-import { TestApplication } from "./framework/test-application";
+import { TestApplication } from "./_framework/test-application";
 import { HelloWorldTests } from "./hello-world-tests";
-import { EntitiesTests } from "./entities-tests";
 import { DbContextTests } from "./db-context-tests";
 import { BasicLexerTests } from "./utility/lexer/basic-lexers-tests";
 import { LambdaLexersTests } from "./utility/lexer/lambda-lexers-tests";
+import { SchemaTests } from "./schema/schema-tests";
+import { BuilderTests } from "./expression/builder-tests";
 
 TestApplication.Include(HelloWorldTests);
-TestApplication.Include(EntitiesTests);
 // TestApplication.Include(DbContextTests);
 
 TestApplication.Include(BasicLexerTests);
 TestApplication.Include(LambdaLexersTests);
+
+TestApplication.Include(SchemaTests);
+
+TestApplication.Include(BuilderTests);
 
 TestApplication.RunAllTests();

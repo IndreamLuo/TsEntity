@@ -1,5 +1,5 @@
-import { tests, test } from "./framework/decorators";
-import { Assert } from "./framework/assert";
+import { tests, test } from "./_framework/decorators";
+import { Assert } from "./_framework/assert";
 
 @tests()
 export class HelloWorldTests {

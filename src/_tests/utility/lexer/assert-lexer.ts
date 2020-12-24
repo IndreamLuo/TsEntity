@@ -1,6 +1,6 @@
 import { ExpressionTreeNode } from "../../../utilities/lexer/expression-tree-node";
 import { Lexer } from "../../../utilities/lexer/lexers/lexer";
-import { Assert } from "../../framework/assert";
+import { Assert } from "../../_framework/assert";
 
 export class AssertLexer {
     static CanParse<T>(lexer: Lexer<T>, ...scripts: string[]){
