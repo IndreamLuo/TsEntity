@@ -76,6 +76,10 @@ export class BasicLexerTests {
         [integer1, integer2, integer3]
             .map(integer => [fractionalPart5, fractionalPart6, fractionalPart7].map(fractionPart => `${integer}${fractionPart}`))
             .forEach(array => numbers2 = numbers2.concat(array));
+        let stringValue1 = `'123'`;
+        let stringValue2 = `"abc"`;
+        let stringValue3 = `''`;
+        let stringValue4 = `'"`;
 
         AssertLexer.CanParse(BasicLexers.BooleanValue, boolean1, boolean2);
         AssertLexer.CannotParse(BasicLexers.BooleanValue, boolean3);
@@ -100,6 +104,9 @@ export class BasicLexerTests {
 
         AssertLexer.CanParse(BasicLexers.NumberValue, ...numbers1);
         AssertLexer.CannotParse(BasicLexers.NumberValue, ...numbers2);
+
+        AssertLexer.CanParse(BasicLexers.StringValue, stringValue1, stringValue2, stringValue3);
+        AssertLexer.CannotParse(BasicLexers.StringValue, stringValue4, integer1, empty);
     }
 
     @test()
