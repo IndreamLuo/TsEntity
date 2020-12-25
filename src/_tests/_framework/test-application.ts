@@ -1,3 +1,4 @@
+import { StringDictionary } from "../../utilities/types/dictionaries";
 import { TestConfiguration } from "./test-configuration";
 
 export class TestApplication {
@@ -15,6 +16,8 @@ export class TestApplication {
                 let failedOfClass = 0;
 
                 let tests = new testClass.Constructor();
+                let errors: StringDictionary<string> = {};
+
                 testClass.Tests.forEach(test => {
                     allOfClass++;
 
@@ -23,13 +26,20 @@ export class TestApplication {
                         successOfClass++;
                     } catch(error) {
                         failedOfClass++;
-                        console.error();
-                        console.error(error);
-                        console.error();
+                        errors[test] = error;
                     }
                 });
                 
-                console.info(`[${tests.constructor.name}]: Success(${successOfClass}/${allOfClass}) | Failed(${failedOfClass}/${allOfClass})`);
+                if (successOfClass == allOfClass) {
+                    console.info(`[${tests.constructor.name}]: (${successOfClass}/${allOfClass})`);
+                } else {
+                    console.error(`[${tests.constructor.name}]: (${successOfClass}/${allOfClass})`);
+                }
+
+                Object.keys(errors).forEach(test => {
+                    console.error(test);
+                    console.error(errors[test]);
+                })
 
                 all += allOfClass;
                 success += successOfClass;
@@ -37,6 +47,6 @@ export class TestApplication {
             });
         });
 
-        console.info(`All: Success(${success}/${all}) | Failed(${failed}/${all})`);
+        console.info(`All success: (${success}/${all})`);
     }
 }

@@ -3,6 +3,7 @@ import { ComparisonOperator } from "../../../utilities/enums/operators/compariso
 import { ConditionOperator } from "../../../utilities/enums/operators/condition-operator";
 import { BasicLexers } from "../../../utilities/lexer/basic-lexers";
 import { CalculationLexers } from "../../../utilities/lexer/calculation-lexers";
+import { SelectFieldExpression } from "../../../utilities/lexer/expressions/select-field-expression";
 import { Assert } from "../../_framework/assert";
 import { test, tests } from "../../_framework/decorators";
 import { AssertLexer } from "./assert-lexer";
@@ -92,6 +93,35 @@ export class CalculationLexersTests {
             Assert.AreNotEqual(result.Parse.Expression, undefined);
         });
         Assert.IsTrue(values2.length);
+        AssertLexer.CannotParse(CalculationLexers.Calculation, ...values2);
+    }
+
+    @test()
+    ParseSelectFieldScripts() {
+        let empty = '';
+        let codeBreaks = ' \t\r\n \r\t\n';
+        let a_ = 'a_';
+        let a1_ = 'a1_';
+        let numA = '1a';
+        let selectFields1 = 'a.b';
+        let selectFields2 = `${a1_}${codeBreaks}.${a_}`;
+        let wrongSelectFields = `${numA}${codeBreaks}.${a_}`;
+        let values1: string[] = [];
+        [selectFields1, selectFields2]
+            .forEach(value => values1.push(`(${value})`, `(${codeBreaks}${value})`, `(${value}${codeBreaks})`, `(${codeBreaks}${value}${codeBreaks})`));
+        let values2: string[] = [];
+        [wrongSelectFields, empty]
+            .forEach(value => values2.push(`(${value})`, `(${codeBreaks}${value})`, `(${value}${codeBreaks})`, `(${codeBreaks}${value}${codeBreaks})`));
+
+        AssertLexer.CanParse(CalculationLexers.Calculation, selectFields1, selectFields2).forEach(result => {
+            Assert.AreEqual(
+                `${(result.Parse.Expression!.Left as SelectFieldExpression).Identifier}.${(result.Parse.Expression!.Left as SelectFieldExpression).Field}`,
+                result.Script.replace(codeBreaks, '')
+            );
+        });
+        AssertLexer.CannotParse(CalculationLexers.Calculation, wrongSelectFields, empty);
+
+        AssertLexer.CanParse(CalculationLexers.Calculation, ...values1);
         AssertLexer.CannotParse(CalculationLexers.Calculation, ...values2);
     }
 }

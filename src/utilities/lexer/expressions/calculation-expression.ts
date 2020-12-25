@@ -3,7 +3,6 @@ import { OperatorExpression } from "./operator-expression";
 import { SelectFieldExpression } from "./select-field-expression";
 
 export interface CalculationExpression {
-    ResultType: string;
     Operator: OperatorExpression;
     Left: CalculationExpression | ValueType | SelectFieldExpression;
     Right?: CalculationExpression | ValueType | SelectFieldExpression;
