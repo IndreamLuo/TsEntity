@@ -45,8 +45,8 @@ export class CalculationLexers {
         'Calculation',
         [
             BasicLexers.Value,
-            '|', BasicLexers.SelectField,
             '|', '('.toLexerString(), BasicLexers.CodeBreak, () => CalculationLexers.Calculation, BasicLexers.CodeBreak, ')'.toLexerString(),
+            '|', BasicLexers.SelectField,
             '|', () => CalculationLexers.Calculation, BasicLexers.CodeBreak, CalculationLexers.Operator, BasicLexers.CodeBreak, () => CalculationLexers.Calculation,
         ],
         node => {
@@ -60,24 +60,24 @@ export class CalculationLexers {
                 }
             }
 
-            if (node[1].Expression != undefined) {
-                return {
-                    Operator: {
-                        Type: 'Condition',
-                        Operator: ConditionOperator.Is
-                    },
-                    Left: node[1].Expression
-                }
-            }
-
-            if (node[3].Expression !== undefined) {
+            if (node[2].Expression !== undefined) {
                 return {
                     Operator: {
                         Type: 'Condition',
                         Operator: ConditionOperator.Prior
                     },
-                    Left: node[3].Expression
+                    Left: node[2].Expression
                 };
+            }
+
+            if (node[4].Expression != undefined) {
+                return {
+                    Operator: {
+                        Type: 'Condition',
+                        Operator: ConditionOperator.Is
+                    },
+                    Left: node[4].Expression
+                }
             }
 
             return {

@@ -184,7 +184,7 @@ export class Lexer<T> {
     }
 
     private ClearMatchesByMatchingString(matches: string[], matchingString: string) {
-        [...matchingString.matchAll(/\((?<!\?)(?=[\s\S]*\))/g)].forEach(() => {
+        [...matchingString.matchAll(/(?<!(?<!(?<=\\)(\\\\)*)\\)\((?<!\?)(?=[\s\S]*\))/g)].forEach(() => {
             matches.shift();
         });
     }

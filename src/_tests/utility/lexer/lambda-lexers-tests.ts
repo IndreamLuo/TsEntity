@@ -70,6 +70,8 @@ export class LambdaLexersTests {
         let selectFieldWithBrackets7 = 'a.1';
         let selectFieldWithBrackets8 = 'a.a)';
         let selectFieldWithBrackets9 = '(a.a';
+        let selectFieldWithBrackets10 = 'a.b.c.d';
+        let selectFieldWithBrackets11 = '((a.b).c).d';
 
         AssertLexer.CannotParse(LambdaLexers.SelectFieldWithBrackets, '1', codeBreaks);
         AssertLexer.CanParse(LambdaLexers.SelectFieldWithBrackets, 'a', 'hello', '_').forEach(result => {
@@ -84,6 +86,8 @@ export class LambdaLexersTests {
             Assert.AreEqual((result.Parse.Expression as SelectFieldExpression).Field, 'a');
         });
         AssertLexer.CannotParse(LambdaLexers.SelectFieldWithBrackets, selectFieldWithBrackets6, selectFieldWithBrackets7, selectFieldWithBrackets8, selectFieldWithBrackets9);
+
+        AssertLexer.CanParse(LambdaLexers.SelectFieldWithBrackets, selectFieldWithBrackets10, selectFieldWithBrackets11);
     }
 
     @test()

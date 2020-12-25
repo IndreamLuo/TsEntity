@@ -36,13 +36,22 @@ export class BasicLexers {
         'SelectField',
         [
             BasicLexers.Identifier,
+            '|', '('.toLexerString(), BasicLexers.CodeBreak, () => BasicLexers.SelectField, BasicLexers.CodeBreak, ')'.toLexerString(),
             '|', () => BasicLexers.SelectField, BasicLexers.CodeBreak, '.', BasicLexers.Identifier
         ],
-        node => node[0].Expression !== undefined
-            ? node[0].Expression
-            : {
-                Identifier: node[1].Expression,
-                Field: node[3].Expression
+        node => {
+            if (node[0].Expression !== undefined) {
+                return node[0].Expression;
             }
+
+            if (node[2].Expression !== undefined) {
+                return node[2].Expression;
+            }
+            
+            return {
+                Identifier: node[4].Expression,
+                Field: node[6].Expression
+            }
+        }
     );
 };
