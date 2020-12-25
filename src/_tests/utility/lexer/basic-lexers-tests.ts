@@ -1,4 +1,3 @@
-import { resourceUsage } from "process";
 import { BasicLexers } from "../../../utilities/lexer/basic-lexers";
 import { Assert } from "../../_framework/assert";
 import { test, tests } from "../../_framework/decorators";
