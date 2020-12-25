@@ -2,6 +2,8 @@ import { Assure } from "../../assure";
 import { NumberDictionary } from "../../types/dictionaries";
 import { ExpressionTreeNode } from "../expression-tree-node";
 
+require('./to-lexer-string');
+
 export class Lexer<T> {
     constructor (
         public Name: string,

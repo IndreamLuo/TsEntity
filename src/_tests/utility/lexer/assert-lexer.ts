@@ -45,9 +45,9 @@ export class AssertLexer {
                     ? getSubLexer()
                     : getSubLexer;
 
-                let nextChar = (index + 1 < lexer.SubLexers.length
+                let nextChar = index + 1 < lexer.SubLexers.length
                     && typeof(lexer.SubLexers[index + 1]) === 'string'
-                    && ('?*'.indexOf((lexer.SubLexers[index + 1] as string)[0]) + 1));
+                    && ('?*'.indexOf((lexer.SubLexers[index + 1] as string)[0]) + 1);
 
                 if (nextChar) {
                     if (lexerIndex === parse.length) {

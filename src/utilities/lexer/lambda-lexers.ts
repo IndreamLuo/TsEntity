@@ -36,7 +36,7 @@ export class LambdaLexers {
 
     static SelectFieldWithBrackets: Lexer<SelectFieldExpression> = new Lexer(
         "SelectFieldWithBrackets",
-        [BasicLexers.SelectField, '|', '\\(', BasicLexers.CodeBreak, () => LambdaLexers.SelectFieldWithBrackets, BasicLexers.CodeBreak, '\\)'],
+        [BasicLexers.SelectField, '|', '('.toLexerString(), BasicLexers.CodeBreak, () => LambdaLexers.SelectFieldWithBrackets, BasicLexers.CodeBreak, ')'.toLexerString()],
         node => node[0].Expression || node[2].Expression);
 
     static SelectFieldLambda = new Lexer<SelectFieldExpression>(

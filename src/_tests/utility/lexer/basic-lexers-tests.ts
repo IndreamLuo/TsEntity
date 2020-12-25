@@ -68,14 +68,14 @@ export class BasicLexerTests {
         let numbers1: string[] = [];
         [integer1, integer2, integer3]
             .map(integer => [fractionalPart1, fractionalPart2, fractionalPart3, fractionalPart4, empty].map(fractionPart => `${integer}${fractionPart}`))
-            .forEach(array => numbers1 = numbers1.concat(array));
+            .forEach(array => numbers1.push(...array));
         let numbers2: string[] = [];
         [integer4, integer5]
             .map(integer => [fractionalPart1, fractionalPart2, fractionalPart3, fractionalPart4, empty].map(fractionPart => `${integer}${fractionPart}`))
-            .forEach(array => numbers2 = numbers2.concat(array));
+            .forEach(array => numbers2.push(...array));
         [integer1, integer2, integer3]
             .map(integer => [fractionalPart5, fractionalPart6, fractionalPart7].map(fractionPart => `${integer}${fractionPart}`))
-            .forEach(array => numbers2 = numbers2.concat(array));
+            .forEach(array => numbers2.push(...array));
         let stringValue1 = `'123'`;
         let stringValue2 = `"abc"`;
         let stringValue3 = `''`;
