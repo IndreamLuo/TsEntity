@@ -1,4 +1,5 @@
 import { BasicLexers } from "../../../utilities/lexer/basic-lexers";
+import { SelectFieldExpression } from "../../../utilities/lexer/expressions/select-field-expression";
 import { Assert } from "../../_framework/assert";
 import { test, tests } from "../../_framework/decorators";
 import { AssertLexer } from "./assert-lexer";
@@ -135,12 +136,14 @@ export class BasicLexerTests {
         let selectFields2 = `${a1_}${codeBreaks}.${a_}`;
         let wrongSelectFields = `${numA}${codeBreaks}.${a_}`;
 
+        AssertLexer.CanParse(BasicLexers.SelectField, a, a_, a1_);
+
         AssertLexer.CanParse(BasicLexers.SelectField, selectFields1, selectFields2).forEach(result => {
             Assert.AreEqual(
-                `${result.Parse.Expression!.Identifier}.${result.Parse.Expression!.Field}`,
+                `${(result.Parse.Expression! as SelectFieldExpression).Identifier}.${(result.Parse.Expression! as SelectFieldExpression).Field}`,
                 result.Script.replace(codeBreaks, '')
             );
         });
-        AssertLexer.CannotParse(BasicLexers.SelectField, wrongSelectFields, a, empty);
+        AssertLexer.CannotParse(BasicLexers.SelectField, wrongSelectFields, empty);
     }
 }

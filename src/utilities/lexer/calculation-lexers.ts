@@ -71,7 +71,13 @@ export class CalculationLexers {
             }
 
             if (node[3].Expression !== undefined) {
-                return node[3].Expression;
+                return {
+                    Operator: {
+                        Type: 'Condition',
+                        Operator: ConditionOperator.Prior
+                    },
+                    Left: node[3].Expression
+                };
             }
 
             return {

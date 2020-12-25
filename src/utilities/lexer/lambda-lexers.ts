@@ -34,18 +34,18 @@ export class LambdaLexers {
             return [node[0].Expression].concat(node[1].Expression)
         });
 
-    static SelectFieldWithBrackets: Lexer<SelectFieldExpression> = new Lexer(
+    static SelectFieldWithBrackets: Lexer<string | SelectFieldExpression> = new Lexer(
         "SelectFieldWithBrackets",
         [BasicLexers.SelectField, '|', '('.toLexerString(), BasicLexers.CodeBreak, () => LambdaLexers.SelectFieldWithBrackets, BasicLexers.CodeBreak, ')'.toLexerString()],
         node => node[0].Expression || node[2].Expression);
 
-    static SelectFieldLambda = new Lexer<SelectFieldExpression>(
+    static SelectFieldLambda = new Lexer<string | SelectFieldExpression>(
         "SelectField",
         [BasicLexers.Identifier, BasicLexers.CodeBreak, '=>', BasicLexers.CodeBreak, LambdaLexers.SelectFieldWithBrackets],
         node => {
             Assure.AreEqual(
                 node[0].Expression,
-                node[3].Expression.Identifier,
+                typeof(node[3].Expression) === 'string' ? node[3].Expression : node[3].Expression.Identifier,
                 () => `"${node[0].Expression}" and "${node[3].Expression.Identifier}" are not equal. A select-field lambda should be using the parameter input.`);
 
             return node[3].Expression;

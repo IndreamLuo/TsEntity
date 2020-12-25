@@ -1,4 +1,6 @@
 import { Schema } from "../../schema/schema";
+import { Assure } from "../../utilities/assure";
+import { SelectFieldExpression } from "../../utilities/lexer/expressions/select-field-expression";
 import { LambdaLexers } from "../../utilities/lexer/lambda-lexers";
 import { EntityExpressionBase } from "../expressions/base/entity-expression-base";
 import { ReferenceExpression } from "../expressions/reference-expression";
@@ -14,8 +16,10 @@ EntityExpressionBase.prototype.Reference = function <T, TTo>(to: (from: T) => TT
     
     let toExpression = to.toString();
     let expressionTreeNode = LambdaLexers.SelectFieldLambda.Parse(toExpression);
-    
-    let toFieldName = expressionTreeNode.Expression!.Field;
+
+    Assure.AreNotEqual(typeof(expressionTreeNode.Expression), 'string', () => 'Cannot self-reference.');
+
+    let toFieldName = (expressionTreeNode.Expression as SelectFieldExpression).Field;
 
     let relationship = Schema.Base.Relationships[entityDiagram.Name][toFieldName];
 

@@ -1,3 +1,4 @@
+import { SelectFieldExpression } from "../../../utilities/lexer/expressions/select-field-expression";
 import { LambdaLexers } from "../../../utilities/lexer/lambda-lexers";
 import { Assert } from "../../_framework/assert";
 import { test, tests } from "../../_framework/decorators";
@@ -70,13 +71,17 @@ export class LambdaLexersTests {
         let selectFieldWithBrackets8 = 'a.a)';
         let selectFieldWithBrackets9 = '(a.a';
 
+        AssertLexer.CannotParse(LambdaLexers.SelectFieldWithBrackets, '1', codeBreaks);
+        AssertLexer.CanParse(LambdaLexers.SelectFieldWithBrackets, 'a', 'hello', '_').forEach(result => {
+            Assert.AreEqual(result.Script, result.Parse.Expression);
+        });
         AssertLexer.CanParse(LambdaLexers.SelectFieldWithBrackets, selectFieldWithBrackets1, selectFieldWithBrackets2, selectFieldWithBrackets3).forEach(result => {
-            Assert.AreEqual(result.Parse.Expression!.Identifier, 'a');
-            Assert.AreEqual(result.Parse.Expression!.Field, 'b');
+            Assert.AreEqual((result.Parse.Expression as SelectFieldExpression).Identifier, 'a');
+            Assert.AreEqual((result.Parse.Expression as SelectFieldExpression).Field, 'b');
         });
         AssertLexer.CanParse(LambdaLexers.SelectFieldWithBrackets, selectFieldWithBrackets4, selectFieldWithBrackets5).forEach(result => {
-            Assert.AreEqual(result.Parse.Expression!.Identifier, 'a');
-            Assert.AreEqual(result.Parse.Expression!.Field, 'a');
+            Assert.AreEqual((result.Parse.Expression as SelectFieldExpression).Identifier, 'a');
+            Assert.AreEqual((result.Parse.Expression as SelectFieldExpression).Field, 'a');
         });
         AssertLexer.CannotParse(LambdaLexers.SelectFieldWithBrackets, selectFieldWithBrackets6, selectFieldWithBrackets7, selectFieldWithBrackets8, selectFieldWithBrackets9);
     }
@@ -92,9 +97,13 @@ export class LambdaLexersTests {
         let selectFieldLambda6 = 'a=>=>a.b';
         let selectFieldLambda7 = 'a=>b.a';
 
+        AssertLexer.CanParse(LambdaLexers.SelectFieldLambda, 'a => a', 'hello=> hello', '_ =>_').forEach(result => {
+            Assert.AreEqual(result.Script.substring(0, result.Script.indexOf('=>')).trim(), result.Parse.Expression);
+        });
+        AssertLexer.CannotParse(LambdaLexers.SelectFieldLambda, '1', codeBreaks);
         AssertLexer.CanParse(LambdaLexers.SelectFieldLambda, selectFieldLambda1, selectFieldLambda2, selectFieldLambda3).forEach(result => {
-            Assert.AreEqual(result.Parse.Expression!.Identifier, 'a');
-            Assert.AreEqual(result.Parse.Expression!.Field, 'b');
+            Assert.AreEqual((result.Parse.Expression as SelectFieldExpression).Identifier, 'a');
+            Assert.AreEqual((result.Parse.Expression as SelectFieldExpression).Field, 'b');
         });
         AssertLexer.CannotParse(LambdaLexers.SelectFieldLambda, selectFieldLambda4, selectFieldLambda5, selectFieldLambda6);
         AssertLexer.CannotParse(LambdaLexers.SelectFieldLambda, selectFieldLambda7).forEach(result => {

@@ -3,6 +3,7 @@ import { ComparisonOperator } from "../../../utilities/enums/operators/compariso
 import { ConditionOperator } from "../../../utilities/enums/operators/condition-operator";
 import { BasicLexers } from "../../../utilities/lexer/basic-lexers";
 import { CalculationLexers } from "../../../utilities/lexer/calculation-lexers";
+import { CalculationExpression } from "../../../utilities/lexer/expressions/calculation-expression";
 import { SelectFieldExpression } from "../../../utilities/lexer/expressions/select-field-expression";
 import { Assert } from "../../_framework/assert";
 import { test, tests } from "../../_framework/decorators";
@@ -90,7 +91,9 @@ export class CalculationLexersTests {
         
         Assert.IsTrue(values1.length);
         AssertLexer.CanParse(CalculationLexers.Calculation, ...values1).forEach(result => {
-            Assert.AreNotEqual(result.Parse.Expression, undefined);
+            Assert.AreEqual(result.Parse.Expression!.Operator.Operator, ConditionOperator.Prior);
+            Assert.AreEqual((result.Parse.Expression!.Left as CalculationExpression).Operator.Type, 'Condition');
+            Assert.AreEqual((result.Parse.Expression!.Left as CalculationExpression).Operator.Operator, ConditionOperator.Is);
         });
         Assert.IsTrue(values2.length);
         AssertLexer.CannotParse(CalculationLexers.Calculation, ...values2);
@@ -121,7 +124,11 @@ export class CalculationLexersTests {
         });
         AssertLexer.CannotParse(CalculationLexers.Calculation, wrongSelectFields, empty);
 
-        AssertLexer.CanParse(CalculationLexers.Calculation, ...values1);
+        AssertLexer.CanParse(CalculationLexers.Calculation, ...values1).forEach(result => {
+            Assert.AreEqual(result.Parse.Expression!.Operator.Operator, ConditionOperator.Prior);
+            Assert.AreEqual((result.Parse.Expression!.Left as CalculationExpression).Operator.Type, 'Condition');
+            Assert.AreEqual((result.Parse.Expression!.Left as CalculationExpression).Operator.Operator, ConditionOperator.Is);
+        });
         AssertLexer.CannotParse(CalculationLexers.Calculation, ...values2);
     }
 }

@@ -14,5 +14,7 @@ export class BuilderTests {
         let employeesExpression = companiesExpression.Reference(company => company.Employees);
         Assert.AreEqual(employeesExpression.EntityConstructor, Employee);
         Assert.AreEqual(employeesExpression.From, companiesExpression);
+
+        Assert.ThrowError(() => companiesExpression.Reference(company => company), 'Cannot self-reference.');
     }
 }

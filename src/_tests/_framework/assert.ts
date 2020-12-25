@@ -20,4 +20,12 @@ export class Assert {
     static AreNotEqual(left: any, right: any, errorMessage: string = `[${left}] is equal to [${right}].`) {
         return this.IsFalse(left == right, errorMessage);
     }
+
+    static ThrowError(call: Function, errorMessage: string) {
+        try {
+            call();
+        } catch (error) {
+            Assert.AreEqual(error.message, errorMessage);
+        }
+    }
 }

@@ -46,7 +46,7 @@ export class Lexer<T> {
 
     get RegExpForRecursive(): RegExp {
         if (!this._regExpForRecursive) {
-            this._regExpForRecursive = new RegExp(`(${this.SubExpressions!.map(subExpression => subExpression !== undefined ? subExpression : '[\\s\\S]*').join('')})`);
+            this._regExpForRecursive = new RegExp(this.SubExpressions!.map(subExpression => subExpression !== undefined ? subExpression : '[\\s\\S]*').join(''));
         }
 
         return this._regExpForRecursive;
@@ -88,7 +88,7 @@ export class Lexer<T> {
             regularExpression = this.SubExpressions
                 .map(expression => expression !== undefined
                     ? expression
-                    : `(()|${this.RegExpForRecursive.source})`)
+                    : `(${this.RegExpForRecursive.source})`)
                 .join('');
         }
         

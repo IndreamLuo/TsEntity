@@ -32,12 +32,17 @@ export class BasicLexers {
         node => node.filter(subNode => subNode.Expression !== undefined)[0].Expression
     );
 
-    static SelectField = new Lexer<SelectFieldExpression>(
+    static SelectField: Lexer<SelectFieldExpression | string> = new Lexer<SelectFieldExpression | string>(
         'SelectField',
-        [BasicLexers.Identifier, BasicLexers.CodeBreak, '.', BasicLexers.Identifier],
-        node => ({
-            Identifier: node[0].Expression,
-            Field: node[2].Expression
-        })
+        [
+            BasicLexers.Identifier,
+            '|', () => BasicLexers.SelectField, BasicLexers.CodeBreak, '.', BasicLexers.Identifier
+        ],
+        node => node[0].Expression !== undefined
+            ? node[0].Expression
+            : {
+                Identifier: node[1].Expression,
+                Field: node[3].Expression
+            }
     );
 };
