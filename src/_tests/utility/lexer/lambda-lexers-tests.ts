@@ -59,38 +59,6 @@ export class LambdaLexersTests {
     }
 
     @test()
-    ParseScriptsOnSelectFieldWithBrackets() {
-        let codeBreaks = ' \t\r\n \t\r\n';
-        let selectFieldWithBrackets1 = `a${codeBreaks}.b`;
-        let selectFieldWithBrackets2 = '(a.b)';
-        let selectFieldWithBrackets3 = `(${codeBreaks}a${codeBreaks}.b${codeBreaks})`;
-        let selectFieldWithBrackets4 = '(a.a)';
-        let selectFieldWithBrackets5 = `((${codeBreaks}(a.a${codeBreaks})))`;
-        let selectFieldWithBrackets6 = 'a';
-        let selectFieldWithBrackets7 = 'a.1';
-        let selectFieldWithBrackets8 = 'a.a)';
-        let selectFieldWithBrackets9 = '(a.a';
-        let selectFieldWithBrackets10 = 'a.b.c.d';
-        let selectFieldWithBrackets11 = '((a.b).c).d';
-
-        AssertLexer.CannotParse(LambdaLexers.SelectFieldWithBrackets, '1', codeBreaks);
-        AssertLexer.CanParse(LambdaLexers.SelectFieldWithBrackets, 'a', 'hello', '_').forEach(result => {
-            Assert.AreEqual(result.Script, result.Parse.Expression);
-        });
-        AssertLexer.CanParse(LambdaLexers.SelectFieldWithBrackets, selectFieldWithBrackets1, selectFieldWithBrackets2, selectFieldWithBrackets3).forEach(result => {
-            Assert.AreEqual((result.Parse.Expression as SelectFieldExpression).Identifier, 'a');
-            Assert.AreEqual((result.Parse.Expression as SelectFieldExpression).Field, 'b');
-        });
-        AssertLexer.CanParse(LambdaLexers.SelectFieldWithBrackets, selectFieldWithBrackets4, selectFieldWithBrackets5).forEach(result => {
-            Assert.AreEqual((result.Parse.Expression as SelectFieldExpression).Identifier, 'a');
-            Assert.AreEqual((result.Parse.Expression as SelectFieldExpression).Field, 'a');
-        });
-        AssertLexer.CannotParse(LambdaLexers.SelectFieldWithBrackets, selectFieldWithBrackets6, selectFieldWithBrackets7, selectFieldWithBrackets8, selectFieldWithBrackets9);
-
-        AssertLexer.CanParse(LambdaLexers.SelectFieldWithBrackets, selectFieldWithBrackets10, selectFieldWithBrackets11);
-    }
-
-    @test()
     ParseScriptsOnSelectFieldLambda() {
         let codeBreaks = ' \t\r\n \t\r\n';
         let selectFieldLambda1 = 'a => a.b';
