@@ -7,23 +7,32 @@ import { ReferenceExpression } from "../expressions/reference-expression";
 
 declare module '../expressions/base/entity-expression-base' {
     interface EntityExpressionBase<T> {
-        Reference<TTo>(to: (from: T) => TTo | TTo[]): ReferenceExpression<T, TTo>;
+        Reference<TTo>(to: (from: T) => TTo | TTo[]): ReferenceExpression<any, TTo>;
     }
 }
 
 EntityExpressionBase.prototype.Reference = function <T, TTo>(to: (from: T) => TTo | TTo[]) {
-    let entityDiagram = Schema.Base.GetOrAddEntity(this.EntityConstructor);
-    
     let toExpression = to.toString();
     let expressionTreeNode = LambdaLexers.SelectFieldLambda.Parse(toExpression);
 
     Assure.AreNotEqual(typeof(expressionTreeNode.Expression), 'string', () => 'Cannot self-reference.');
 
-    let toFieldName = (expressionTreeNode.Expression as SelectFieldExpression).Field;
+    let selectFieldExpression = expressionTreeNode.Expression as SelectFieldExpression;
+    let references = [];
 
-    let relationship = Schema.Base.Relationships[entityDiagram.Name][toFieldName];
+    while (typeof(selectFieldExpression) !== 'string') {
+        references.unshift(selectFieldExpression.Field);
+        selectFieldExpression = selectFieldExpression.Identifier as SelectFieldExpression;
+    }
 
-    let toEntity = Schema.Base.GetOrAddEntity(relationship.GetToType());
+    let entityDiagram = Schema.Base.GetOrAddEntity(this.EntityConstructor);
+    let from = this;
+    references.forEach(reference => {
+        let relationship = Schema.Base.Relationships[entityDiagram.Name][reference];
+        let toEntity = Schema.Base.GetOrAddEntity(relationship.GetToType());
+        from = new ReferenceExpression(toEntity.Constructor, from, relationship);
+        entityDiagram = Schema.Base.GetOrAddEntity(relationship.GetToType());
+    });
 
-    return new ReferenceExpression(toEntity.Constructor, this, relationship);
+    return from! as ReferenceExpression<T, TTo>;
 }

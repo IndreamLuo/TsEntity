@@ -21,7 +21,7 @@ export class Assert {
         return this.IsFalse(left == right, errorMessage);
     }
 
-    static ThrowError(call: Function, errorMessage: string) {
+    static WillThrowError(call: Function, errorMessage: string) {
         try {
             call();
         } catch (error) {
