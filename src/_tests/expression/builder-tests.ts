@@ -20,6 +20,10 @@ export class BuilderTests {
         Assert.AreEqual(employeesExpression.EntityConstructor, Employee);
         Assert.AreEqual(employeesExpression.From, companiesExpression);
 
+        companiesExpression = employeesExpression.Reference(employee => employee.Company);
+        Assert.AreEqual(companiesExpression.EntityConstructor, Company);
+        Assert.AreEqual((companiesExpression as ReferenceExpression<Employee, Company>).From, employeesExpression);
+
         let employeeExpression = SourceExpressionBuilder.New(Employee);
         employeesExpression = employeeExpression
             .Reference(employee => employee.Company)
