@@ -46,7 +46,70 @@ export class Lexer<T> {
 
     get RegExpForRecursive(): RegExp {
         if (!this._regExpForRecursive) {
-            this._regExpForRecursive = new RegExp(this.SubExpressions!.map(subExpression => subExpression !== undefined ? subExpression : '[\\s\\S]*').join(''));
+            let subExpressions = this.SubExpressions;
+            let regExpSubExpression: NumberDictionary<RegExp> = {};
+
+            this._regExpForRecursive = new RegExp(
+                // The recrusive RegExp should be 100% (no more, no less) matching as the complete RegExp does
+                // The first layer will be the almost same as origin and put the recursive sub-lexer (marked as undefined) with a second layer matching
+                subExpressions!
+                    .map(subExpression => subExpression !== undefined
+                            ? subExpression
+                            : `(${this.SubExpressions?.map((sub, index) => {
+                                if (sub !== undefined) {
+                                    return sub;
+                                }
+
+                                // RegExp /[\S\s]*/ will be used for recursive only while it's enclosed by non-empty-able sub-lexers.
+                                // This design avoids /[\S\s]*/ extends it's coverage outside the recursive area.
+                                let previousIndex = index - 1;
+                                let frontClosure = false;
+
+                                while (!frontClosure && previousIndex >= 0) {
+                                    if (subExpressions![previousIndex] !== undefined) {
+                                        let previousLexer = subExpressions![previousIndex];
+
+                                        if (previousLexer!.match(/^(|[\s\S]*[^\\])(\\\\)*\|$/)) {
+                                            break;
+                                        }
+
+                                        regExpSubExpression[previousIndex] = regExpSubExpression[previousIndex] || new RegExp(`^(${previousLexer})$`);
+                                        let match = regExpSubExpression[previousIndex].exec('');
+                                        frontClosure = match === null || match!.length === 0;
+                                    }
+
+                                    previousIndex--;
+                                }
+
+                                if (frontClosure) {
+                                    let nextIndex = index + 1;
+                                    let behindClosure = false;
+
+                                    while (!behindClosure && nextIndex < subExpressions!.length) {
+                                        if (subExpressions![nextIndex] !== undefined) {
+                                            let nextLexer = subExpressions![nextIndex];
+
+                                            if (nextLexer![0] === '|') {
+                                                break;
+                                            }
+
+                                            regExpSubExpression[nextIndex] = regExpSubExpression[nextIndex] || new RegExp(`^(${nextLexer})$`);
+                                            let match = regExpSubExpression[nextIndex].exec('');
+                                            behindClosure = match === null || match!.length === 0;
+                                        }
+
+                                        nextIndex++;
+                                    }
+
+                                    if (behindClosure) {
+                                        return '[\\S\\s]*';
+                                    }
+                                }
+
+                                return '';
+                            }).join('')})*`)
+                    .join('')
+            );
         }
 
         return this._regExpForRecursive;

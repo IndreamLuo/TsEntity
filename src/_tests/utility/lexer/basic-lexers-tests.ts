@@ -134,9 +134,12 @@ export class BasicLexerTests {
         let numA = '1a';
         let selectFields1 = 'a.b';
         let selectFields2 = `${a1_}${codeBreaks}.${a_}`;
-        let wrongSelectFields = `${numA}${codeBreaks}.${a_}`;
         let selectField3 = 'a.b.c.d';
         let selectField4 = '((a.b).c).d';
+        let selectField5 = '((((a.b).c).d))';
+        let selectField6 = '(((a.b).c).d)';
+        let wrongSelectFields1 = `${numA}${codeBreaks}.${a_}`;
+        let wrongSelectFields2 = '1 <= a.b';
 
         AssertLexer.CanParse(BasicLexers.SelectField, a, a_, a1_);
 
@@ -146,13 +149,14 @@ export class BasicLexerTests {
                 result.Script.replace(codeBreaks, '')
             );
         });
-        AssertLexer.CannotParse(BasicLexers.SelectField, wrongSelectFields, empty);
 
-        AssertLexer.CanParse(BasicLexers.SelectField, selectField3, selectField4).forEach(result => {
+        AssertLexer.CanParse(BasicLexers.SelectField, selectField3, selectField4, selectField5, selectField6).forEach(result => {
             Assert.AreEqual((result.Parse.Expression as SelectFieldExpression).Field, 'd');
             Assert.AreEqual(((result.Parse.Expression as SelectFieldExpression).Identifier as SelectFieldExpression).Field, 'c');
             Assert.AreEqual((((result.Parse.Expression as SelectFieldExpression).Identifier as SelectFieldExpression).Identifier as SelectFieldExpression).Field, 'b');
             Assert.AreEqual((((result.Parse.Expression as SelectFieldExpression).Identifier as SelectFieldExpression).Identifier as SelectFieldExpression).Identifier, 'a');
         });
+
+        AssertLexer.CannotParse(BasicLexers.SelectField, wrongSelectFields1, wrongSelectFields2, empty);
     }
 }

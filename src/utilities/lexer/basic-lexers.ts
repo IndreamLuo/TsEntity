@@ -21,7 +21,7 @@ export class BasicLexers {
     );
     static IntegerValueWithoutSign = new NumberLexer('IntegerValueWithoutSign', '[1-9][\\d]*|0');
     static IntegerValue = new NumberLexer('IntegerValue', [BasicLexers.PlusMinusSignWithCodeBreak, '?', BasicLexers.IntegerValueWithoutSign]);
-    static FractionalPart = new StringLexer('FractionalPart', ['.', BasicLexers.Digits]);
+    static FractionalPart = new StringLexer('FractionalPart', ['.'.toLexerString(), BasicLexers.Digits]);
     static FractionalPartOrEmpty = new StringLexer('FractionalPartOrEmpty', [BasicLexers.FractionalPart, '|', BasicLexers.Empty]);
     static NumberValue = new NumberLexer('NumberValue', [BasicLexers.IntegerValue, BasicLexers.FractionalPartOrEmpty]);
     
@@ -37,7 +37,7 @@ export class BasicLexers {
         [
             BasicLexers.Identifier,
             '|', '('.toLexerString(), BasicLexers.CodeBreak, () => BasicLexers.SelectField, BasicLexers.CodeBreak, ')'.toLexerString(),
-            '|', () => BasicLexers.SelectField, BasicLexers.CodeBreak, '.', BasicLexers.Identifier
+            '|', () => BasicLexers.SelectField, BasicLexers.CodeBreak, '.'.toLexerString(), BasicLexers.Identifier
         ],
         node => {
             if (node[0].Expression !== undefined) {

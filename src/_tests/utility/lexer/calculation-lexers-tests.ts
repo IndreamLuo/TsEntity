@@ -66,13 +66,13 @@ export class CalculationLexersTests {
         let string4 = `'abc\'"`;
         let string5 = `"abc'`;
         let values1: string[] = [];
-        [boolean1, boolean2, number1, number2, number3, number4, string1, string2, string3]
+        [boolean1, boolean2, boolean3, number1, number2, number3, number4, number7, string1, string2, string3]
             .forEach(value => values1.push(`(${value})`, `(${codeBreaks}${value})`, `(${value}${codeBreaks})`, `(${codeBreaks}${value}${codeBreaks})`));
         let values2: string[] = [];
-        [boolean3, number5, number6, number7, string4, string5]
+        [number5, number6, string4, string5]
             .forEach(value => values2.push(`(${value})`, `(${codeBreaks}${value})`, `(${value}${codeBreaks})`, `(${codeBreaks}${value}${codeBreaks})`));
 
-        AssertLexer.CanParse(CalculationLexers.Calculation, boolean1, boolean2).forEach(result => {
+        AssertLexer.CanParse(CalculationLexers.Calculation, boolean1, boolean2, boolean3).forEach(result => {
             Assert.AreEqual(result.Parse.Expression!.Operator.Type, 'Condition');
             Assert.AreEqual(result.Parse.Expression!.Operator.Operator, ConditionOperator.Is);
             Assert.AreEqual(result.Script, '' + result.Parse.Expression!.Left);
@@ -87,7 +87,7 @@ export class CalculationLexersTests {
             Assert.AreEqual(result.Parse.Expression!.Operator.Operator, ConditionOperator.Is);
             Assert.AreEqual(result.Script.substring(1, result.Script.length - 2), result.Parse.Expression!.Left);
         });
-        AssertLexer.CannotParse(CalculationLexers.Calculation, boolean3, number5, number6, number7, string4, string5);
+        AssertLexer.CannotParse(CalculationLexers.Calculation, number5, number6, number7, string4, string5);
         
         Assert.IsTrue(values1.length);
         AssertLexer.CanParse(CalculationLexers.Calculation, ...values1).forEach(result => {
@@ -130,5 +130,19 @@ export class CalculationLexersTests {
             Assert.AreEqual((result.Parse.Expression!.Left as CalculationExpression).Operator.Operator, ConditionOperator.Is);
         });
         AssertLexer.CannotParse(CalculationLexers.Calculation, ...values2);
+    }
+
+    @test()
+    ParseConditionScripts() {
+        let empty = '';
+        let codeBreaks = ' \t\r\n \r\t\n';
+        let condition1 = 'a.b == 1';
+        let condition2 = '1 <= a.b';
+        let condition3 = '1 <= a.b && a.c == true';
+        let condition4 = 'hello.world == true && my.dear.girl > 18';
+        let condition5 = '(a).b == 1 || a.b.c + 1 == 0 && a.c.d <= 5';
+        let condition6 = 'a.b == 1';
+
+        AssertLexer.CanParse(CalculationLexers.Calculation, condition1, condition2, condition3, condition4, condition5, condition6);
     }
 }

@@ -18,13 +18,14 @@ export class AssertLexer {
         return scripts.map(script => {
             try {
                 lexer.Parse(script);
-                throw Error(`Lexer[${lexer.Name}] can parse ${script}.`);
             } catch (error) {
                 return {
                     Script: script,
                     Error: error
                 };
             }
+            
+            throw Error(`Lexer[${lexer.Name}] can parse "${script}".`);
         });
     }
 

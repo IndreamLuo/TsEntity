@@ -11,6 +11,7 @@ String.prototype.toLexerString = function () {
 
     for (var index = 0; index < this.length; index++) {
         switch (this[index]) {
+            case '.':
             case '|':
             case '(':
             case ')':

@@ -10,7 +10,7 @@ import { StringLexer } from "./lexers/string-lexer";
 export class CalculationLexers {
     static ComparisonOperator = new StringLexer(
         'ComparisonOperator',
-        [ComparisonOperator.EqualTo, '|', ComparisonOperator.NotEqualTo, '|', ComparisonOperator.GreaterThan, '|', ComparisonOperator.NoLessThan, '|', ComparisonOperator.LessThan, '|', ComparisonOperator.NoGreaterThan]);
+        [ComparisonOperator.EqualTo, '|', ComparisonOperator.NotEqualTo, '|', ComparisonOperator.NoLessThan, '|', ComparisonOperator.NoGreaterThan, '|', ComparisonOperator.LessThan, '|', ComparisonOperator.GreaterThan]);
 
     static CalculationOperator = new StringLexer(
         'CalculationOperator',
