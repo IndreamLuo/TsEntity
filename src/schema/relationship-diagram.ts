@@ -5,7 +5,7 @@ export class RelationshipDiagram<TFrom, TTo> {
         public IsMultiple: Boolean,
         public From: EntityDiagram<TFrom>,
         public GetToType: () => TTo,
-        public Name: string,
+        public Name: keyof TFrom,
         public ForeignKeys: string[]
     ) {}
 }

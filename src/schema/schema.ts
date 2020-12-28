@@ -1,4 +1,4 @@
-import { ConstructorType } from "./constructor-type";
+import { ConstructorType } from "../utilities/types/constructor-type";
 import { EntityDiagram } from "./entity-diagram";
 import { RelationshipDiagram } from "./relationship-diagram";
 
@@ -8,7 +8,11 @@ export class Schema {
     static Base: Schema = new Schema();
 
     Entities: { [name: string]: EntityDiagram<any>; } = {};
-    Relationships: { [from: string]: RelationshipDiagram<any, any>[] } = {}
+    Relationships: {
+        [from: string]: {
+            [field: string]: RelationshipDiagram<any, any>
+        }
+    } = {}
 
     private EntityNameRecords: {
         [constructorName: string]: { Constructor: ConstructorType<any>, EntityName: string }[]
@@ -37,10 +41,10 @@ export class Schema {
     AddRelationship<TFrom, TTo>(isMultiple: Boolean,
         from: EntityDiagram<TFrom>,
         getToEntityType: () => TTo,
-        toName: string,
+        toName: keyof TFrom | string,
         ...foreignKeys: string[]
     ) {
-        var relationship = new RelationshipDiagram(isMultiple, from, getToEntityType, toName, foreignKeys);
-        (this.Relationships[from.Name] = this.Relationships[from.Name] || []).push(relationship);
+        var relationship = new RelationshipDiagram(isMultiple, from, getToEntityType, toName as keyof TFrom, foreignKeys);
+        (this.Relationships[from.Name] = this.Relationships[from.Name] || {})[toName as string] = relationship;
     }
 }

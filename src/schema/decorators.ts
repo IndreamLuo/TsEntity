@@ -1,4 +1,4 @@
-import { ConstructorType } from "./constructor-type";
+import { ConstructorType } from "../utilities/types/constructor-type";
 import { Schema } from "./schema";
 
 export function entity(name: string | null = null) {

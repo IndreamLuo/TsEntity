@@ -1,5 +1,5 @@
 import { ColumnDiagram } from "./column-diagram";
-import { ConstructorType } from "./constructor-type";
+import { ConstructorType } from "../utilities/types/constructor-type";
 
 export class EntityDiagram<TEntity> {
     constructor (public Constructor: ConstructorType<TEntity>, public Name: string) {}
