@@ -39,4 +39,12 @@ export class BuilderTests {
 
         Assert.WillThrowError(() => companiesExpression.Reference(company => company), 'Cannot self-reference.');
     }
+
+    @test()
+    BuildFilterExpression() {
+        let companiesExpression = SourceExpressionBuilder.New(Company);
+        let employeesExpression = companiesExpression.Reference(company => company.Employees);
+
+        // let filteredCompaniesExpression = companiesExpression.Filter(company => company.Id == 7);
+    }
 }

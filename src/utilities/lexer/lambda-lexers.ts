@@ -1,5 +1,8 @@
 import { Assure } from "../assure";
 import { BasicLexers } from "./basic-lexers";
+import { CalculationLexers } from "./calculation-lexers";
+import { CalculationExpression } from "./expressions/calculation-expression";
+import { LambdaExpression } from "./expressions/lambda-expression";
 import { SelectFieldExpression } from "./expressions/select-field-expression";
 import { Lexer } from "./lexers/lexer";
 
@@ -34,7 +37,7 @@ export class LambdaLexers {
             return [node[0].Expression].concat(node[1].Expression)
         });
 
-    static SelectFieldLambda = new Lexer<SelectFieldExpression>(
+    static SelectFieldLambda = new Lexer<LambdaExpression<SelectFieldExpression>>(
         "SelectField",
         [BasicLexers.Identifier, BasicLexers.CodeBreak, '=>', BasicLexers.CodeBreak, BasicLexers.SelectField],
         node => {
@@ -48,6 +51,18 @@ export class LambdaLexers {
                 identifier,
                 () => `"${node[0].Expression}" and "${node[3].Expression.Identifier}" are not equal. A select-field lambda should be using the parameter input.`);
 
-            return node[3].Expression;
+            return {
+                Parameters: [node[0].Expression],
+                Expression: node[3].Expression
+            }
         });
+
+    static CalculationLambda = new Lexer<LambdaExpression<CalculationExpression>>(
+        "CalculationLambda",
+        [BasicLexers.Identifier, BasicLexers.CodeBreak, '=>', BasicLexers.CodeBreak, CalculationLexers.Calculation],
+        node => ({
+            Parameters: [node[0].Expression],
+            Expression: node[3].Expression
+        })
+    )
 }

@@ -14,10 +14,10 @@ declare module '../expressions/base/entity-expression-base' {
 EntityExpressionBase.prototype.Reference = function <T, TTo>(to: (from: T) => TTo | TTo[]) {
     let toExpression = to.toString();
     let expressionTreeNode = LambdaLexers.SelectFieldLambda.Parse(toExpression);
+    let selectFieldExpression = expressionTreeNode.Expression!.Expression;
 
-    Assure.AreEqual(typeof(expressionTreeNode.Expression!.Field), 'string', () => 'Cannot self-reference.');
+    Assure.AreEqual(typeof(selectFieldExpression.Field), 'string', () => 'Cannot self-reference.');
 
-    let selectFieldExpression = expressionTreeNode.Expression!;
     let references = [];
 
     while (typeof(selectFieldExpression) !== 'string') {

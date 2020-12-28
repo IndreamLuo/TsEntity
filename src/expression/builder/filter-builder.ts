@@ -1,3 +1,4 @@
+import { LambdaLexers } from "../../utilities/lexer/lambda-lexers";
 import { EntityExpressionBase } from "../expressions/base/entity-expression-base";
 import { FilterExpression } from "../expressions/filter-expression";
 
@@ -11,6 +12,8 @@ declare module "../expressions/base/entity-expression-base" {
 
 EntityExpressionBase.prototype.Filter = function <T>(condition: (item: T) => Boolean) {
     let conditionExpression = condition.toString();
+    let calculationExpressionLambdaTreeNode = LambdaLexers.CalculationLambda.Parse(conditionExpression);
+    let calculationExpression = calculationExpressionLambdaTreeNode.Expression!.Expression;
 
     throw new Error();
 }
