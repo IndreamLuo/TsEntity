@@ -15,9 +15,9 @@ EntityExpressionBase.prototype.Reference = function <T, TTo>(to: (from: T) => TT
     let toExpression = to.toString();
     let expressionTreeNode = LambdaLexers.SelectFieldLambda.Parse(toExpression);
 
-    Assure.AreNotEqual(typeof(expressionTreeNode.Expression), 'string', () => 'Cannot self-reference.');
+    Assure.AreEqual(typeof(expressionTreeNode.Expression!.Field), 'string', () => 'Cannot self-reference.');
 
-    let selectFieldExpression = expressionTreeNode.Expression as SelectFieldExpression;
+    let selectFieldExpression = expressionTreeNode.Expression!;
     let references = [];
 
     while (typeof(selectFieldExpression) !== 'string') {

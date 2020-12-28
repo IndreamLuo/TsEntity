@@ -34,13 +34,13 @@ export class LambdaLexers {
             return [node[0].Expression].concat(node[1].Expression)
         });
 
-    static SelectFieldLambda = new Lexer<string | SelectFieldExpression>(
+    static SelectFieldLambda = new Lexer<SelectFieldExpression>(
         "SelectField",
         [BasicLexers.Identifier, BasicLexers.CodeBreak, '=>', BasicLexers.CodeBreak, BasicLexers.SelectField],
         node => {
-            let identifier = node[3].Expression;
-            while (typeof(identifier) !== 'string') {
-                identifier = (identifier as SelectFieldExpression).Identifier;
+            let identifier = node[3].Expression.Identifier;
+            while (typeof(identifier) === 'object') {
+                identifier = identifier.Identifier;
             }
 
             Assure.AreEqual(

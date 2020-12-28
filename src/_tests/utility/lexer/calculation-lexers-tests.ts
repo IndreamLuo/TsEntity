@@ -72,10 +72,15 @@ export class CalculationLexersTests {
         [number5, number6, string4, string5]
             .forEach(value => values2.push(`(${value})`, `(${codeBreaks}${value})`, `(${value}${codeBreaks})`, `(${codeBreaks}${value}${codeBreaks})`));
 
-        AssertLexer.CanParse(CalculationLexers.Calculation, boolean1, boolean2, boolean3).forEach(result => {
+        AssertLexer.CanParse(CalculationLexers.Calculation, boolean1, boolean2).forEach(result => {
             Assert.AreEqual(result.Parse.Expression!.Operator.Type, 'Condition');
             Assert.AreEqual(result.Parse.Expression!.Operator.Operator, ConditionOperator.Is);
             Assert.AreEqual(result.Script, '' + result.Parse.Expression!.Left);
+        });
+        AssertLexer.CanParse(CalculationLexers.Calculation, boolean3).forEach(result => {
+            Assert.AreEqual(result.Parse.Expression!.Operator.Type, 'Condition');
+            Assert.AreEqual(result.Parse.Expression!.Operator.Operator, ConditionOperator.Is);
+            Assert.AreEqual(result.Script, (result.Parse.Expression!.Left as SelectFieldExpression).Identifier);
         });
         AssertLexer.CanParse(CalculationLexers.Calculation, number1, number2, number3, number4).forEach(result => {
             Assert.AreEqual(result.Parse.Expression!.Operator.Type, 'Condition');
@@ -134,15 +139,183 @@ export class CalculationLexersTests {
 
     @test()
     ParseConditionScripts() {
-        let empty = '';
-        let codeBreaks = ' \t\r\n \r\t\n';
         let condition1 = 'a.b == 1';
         let condition2 = '1 <= a.b';
-        let condition3 = '1 <= a.b && a.c == true';
-        let condition4 = 'hello.world == true && my.dear.girl > 18';
-        let condition5 = '(a).b == 1 || a.b.c + 1 == 0 && a.c.d <= 5';
-        let condition6 = 'a.b == 1';
+        let condition3 = 'a.b < 1';
+        let condition4 = '!true';
+        let condition5 = 'a && b + c * !d';
+        let condition6 = '!my.dear.girl > 18';
+        let condition7 = 'hello.world == true || !my.dear.girl > 18';
+        let condition8 = '(a).b == 1 || !(a.b.c + 1) == 0 && a.c.d <= 5';
 
-        AssertLexer.CanParse(CalculationLexers.Calculation, condition1, condition2, condition3, condition4, condition5, condition6);
+        AssertLexer.CanParse(CalculationLexers.Calculation, condition1, condition2, condition3).forEach(result => {
+            Assert.AreEqual(result.Parse.Expression!.Operator.Type, 'Comparison');
+            Assert.IsTrue(result.Parse.Expression!.Operator.Operator);
+            Assert.IsTrue(result.Parse.Expression!.Left);
+            Assert.IsTrue(result.Parse.Expression!.Right);
+        });
+
+        AssertLexer.IsParsedAs(CalculationLexers.Calculation, condition1, {
+            Operator: {
+                Type: 'Comparison',
+                Operator: ComparisonOperator.EqualTo
+            },
+            Left: {
+                Operator: {
+                    Type: 'Condition',
+                    Operator: ConditionOperator.Is
+                },
+                Left: {
+                    Identifier: 'a',
+                    Field: 'b'
+                }
+            },
+            Right: {
+                Operator: {
+                    Type: 'Condition',
+                    Operator: ConditionOperator.Is
+                },
+                Left: 1
+            }
+        });
+
+        AssertLexer.IsParsedAs(CalculationLexers.Calculation, condition4, {
+            Operator: {
+                Type: 'Condition',
+                Operator: ConditionOperator.Not
+            },
+            Left: {
+                Operator: {
+                    Type: 'Condition',
+                    Operator: ConditionOperator.Is
+                },
+                Left: true
+            }
+        });
+
+        AssertLexer.IsParsedAs(CalculationLexers.Calculation, condition5, {
+            Operator: { Operator: ConditionOperator.And },
+            Left: {
+                Operator: { Operator: ConditionOperator.Is },
+                Left: { Identifier: 'a' }
+            },
+            Right: {
+                Operator: { Operator: CalculationOperator.Plus },
+                Left: {
+                    Operator: { Operator: ConditionOperator.Is },
+                    Left: { Identifier: 'b' }
+                },
+                Right: {
+                    Operator: { Operator: CalculationOperator.MultiplyBy },
+                    Left: {
+                        Operator: { Operator: ConditionOperator.Is },
+                        Left: { Identifier: 'c' }
+                    },
+                    Right: {
+                        Operator: { Operator: ConditionOperator.Not },
+                        Left: {
+                            Operator: {
+                                Operator: ConditionOperator.Is
+                            },
+                            Left: { Identifier: 'd' }
+                        }
+                    }
+                }
+            }
+        });
+        
+        AssertLexer.IsParsedAs(CalculationLexers.Calculation, condition6, {
+            Operator: { Operator: ComparisonOperator.GreaterThan },
+            Left: {
+                Operator: { Operator: ConditionOperator.Not },
+                Left: {
+                    Operator: { Operator: ConditionOperator.Is },
+                    Left: {
+                        Identifier: {
+                            Identifier: 'my',
+                            Field: 'dear'
+                        },
+                        Field: 'girl'
+                    }
+                }
+            },
+            Right: {
+                Operator: { Operator: ConditionOperator.Is },
+                Left: 18
+            }
+        });
+        
+        AssertLexer.IsParsedAs(CalculationLexers.Calculation, condition7, {
+            Operator: { Operator: ConditionOperator.Or },
+            Left: {
+                Operator: { Operator: ComparisonOperator.EqualTo },
+                Left: {
+                    Operator: { Operator: ConditionOperator.Is },
+                    Left: { Identifier: 'hello', Field: 'world' }
+                },
+                Right: {
+                    Operator: { Operator: ConditionOperator.Is },
+                    Left: true
+                }
+            },
+            Right: {
+                Operator: { Operator: ComparisonOperator.GreaterThan },
+                Left: {
+                    Operator: { Operator: ConditionOperator.Not },
+                    Left: {
+                        Operator: { Operator: ConditionOperator.Is },
+                        Left: {
+                            Identifier: {
+                                Identifier: 'my',
+                                Field: 'dear'
+                            },
+                            Field: 'girl'
+                        }
+                    }
+                },
+                Right: {
+                    Operator: { Operator: ConditionOperator.Is },
+                    Left: 18
+                }
+            }
+        });
+
+        // '(a).b == 1 || !(a.b.c + 1) == 0 && a.c.d <= 5'
+        AssertLexer.IsParsedAs(CalculationLexers.Calculation, condition8, {
+            Operator: { Operator: ConditionOperator.Or },
+            Left: {
+                Operator: { Operator: ComparisonOperator.EqualTo },
+                Left: {
+                    Left: {
+                        Identifier: 'a',
+                        Field: 'b'
+                    }
+                },
+                Right: { Left: 1 }
+            },
+            Right: {
+                Operator: { Operator: ConditionOperator.And },
+                Left: {
+                    Operator: { Operator: ComparisonOperator.EqualTo },
+                    Left: {
+                        Operator: { Operator: ConditionOperator.Not },
+                        Left: {
+                            Operator: { Operator: ConditionOperator.Prior },
+                            Left: {
+                                Operator: { Operator: CalculationOperator.Plus },
+                                Left: { Left: { Identifier: { Identifier: 'a', Field: 'b' }, Field: 'c' } },
+                                Right: { Left: 1 }
+                            }
+                        }
+                    },
+                    Right: { Left: 0 }
+                },
+                Right: {
+                    Operator: { Operator: ComparisonOperator.NoGreaterThan },
+                    Left: { Left: { Identifier: { Identifier: 'a', Field: 'c' }, Field: 'd' } },
+                    Right: { Left: 5 }
+                }
+            }
+        });
     }
 }

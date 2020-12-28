@@ -28,4 +28,15 @@ export class Assert {
             Assert.AreEqual(error.message, errorMessage);
         }
     }
+
+    static HasSameStructure(object: any, structure: any, errorMessage: string | null = null) {
+        if (typeof(structure) !== 'object' || object === null || object === undefined) {
+            Assert.AreEqual(object, structure);
+            return;
+        }
+
+        Object.keys(structure).forEach(key => {
+            return Assert.HasSameStructure(object[key], structure[key]);
+        });
+    }
 }

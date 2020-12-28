@@ -6,7 +6,7 @@ export class AssertLexer {
     static CanParse<T>(lexer: Lexer<T>, ...scripts: string[]){
         return scripts.map(script => {
             let parse = lexer.Parse(script);
-            AssertLexer.IsParseMatches(lexer, parse);
+            AssertLexer.IsParseMatchingWith(parse, lexer);
             return {
                 Script: script,
                 Parse: parse
@@ -29,7 +29,7 @@ export class AssertLexer {
         });
     }
 
-    static IsParseMatches(lexer: Lexer<any>, parse: ExpressionTreeNode<any>) {
+    static IsParseMatchingWith(parse: ExpressionTreeNode<any>, lexer: Lexer<any>) {
         if (typeof(lexer.SubLexers) === 'string') {
             Assert.IsTrue(parse.Value != null && parse.Value != undefined);
             Assert.IsTrue(lexer.RegExpWithBorder.test(parse.Value!));
@@ -62,9 +62,14 @@ export class AssertLexer {
                     let subParse = parse[lexerIndex];
                     lexerIndex++;
 
-                    subParse.Expression === undefined || AssertLexer.IsParseMatches(subLexer, subParse);
+                    subParse.Expression === undefined || AssertLexer.IsParseMatchingWith(subParse, subLexer);
                 }
             }
         }
+    }
+
+    static IsParsedAs(lexer: Lexer<any>, script: string, structure: any) {
+        let parsed = lexer.Parse(script);
+        Assert.HasSameStructure(parsed.Expression, structure);
     }
 }

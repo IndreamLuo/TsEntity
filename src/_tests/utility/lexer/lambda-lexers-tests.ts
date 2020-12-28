@@ -70,7 +70,7 @@ export class LambdaLexersTests {
         let selectFieldLambda7 = 'a=>b.a';
 
         AssertLexer.CanParse(LambdaLexers.SelectFieldLambda, 'a => a', 'hello=> hello', '_ =>_').forEach(result => {
-            Assert.AreEqual(result.Script.substring(0, result.Script.indexOf('=>')).trim(), result.Parse.Expression);
+            Assert.AreEqual(result.Script.substring(0, result.Script.indexOf('=>')).trim(), result.Parse.Expression!.Identifier);
         });
         AssertLexer.CannotParse(LambdaLexers.SelectFieldLambda, '1', codeBreaks);
         AssertLexer.CanParse(LambdaLexers.SelectFieldLambda, selectFieldLambda1, selectFieldLambda2, selectFieldLambda3).forEach(result => {
