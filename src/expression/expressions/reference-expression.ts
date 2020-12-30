@@ -4,10 +4,9 @@ import { EntityExpressionBase } from "./base/entity-expression-base";
 
 export class ReferenceExpression<TFrom, TTo> extends EntityExpressionBase<TTo> {
     constructor (
-        entityConstructor: ConstructorType<TTo>,
         public From: EntityExpressionBase<TFrom>,
         public Relationship: RelationshipDiagram<TFrom, TTo>
     ) {
-        super(entityConstructor);
+        super(Relationship.GetToType());
     }
 }

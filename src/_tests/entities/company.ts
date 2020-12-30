@@ -11,4 +11,7 @@ export class Company {
 
     @many(() => Employee)
     Employees!: Employee[];
+
+    @column()
+    LastUpdated!: Date;
 }

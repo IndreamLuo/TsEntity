@@ -20,7 +20,7 @@ export class SchemaTests {
 
         Assert.AreEqual(companyDiagram.Ids.length, 1);
         Assert.AreEqual(companyDiagram.Ids[0].Name, 'Id');
-        Assert.AreEqual(Object.keys(companyDiagram.Columns).length, 2);
+        Assert.AreEqual(Object.keys(companyDiagram.Columns).length, 3);
         Assert.AreEqual(companyDiagram.Columns['Id'].Name, 'Id');
         Assert.AreEqual(companyDiagram.Columns['Name'].Name, 'Name');
 

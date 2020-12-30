@@ -1,4 +1,4 @@
-import { CalculationOperator } from "../enums/operators/calculation-operator";
+import { Operator } from "../types/operators";
 import { SelectFieldExpression } from "./expressions/select-field-expression";
 import { BooleanLexer } from "./lexers/boolean-lexer";
 import { Lexer } from "./lexers/lexer";
@@ -13,7 +13,7 @@ export class BasicLexers {
 
     static BooleanValue = new BooleanLexer('BooleanValue', 'true|false');
 
-    static PlusMinusSign = new Lexer<CalculationOperator>('PlusMinusSign', ['\\+|-'], node => node.Value == '+' ? CalculationOperator.Plus : CalculationOperator.Minus);
+    static PlusMinusSign = new Lexer<Operator>('PlusMinusSign', ['\\+|-'], node => node.Value == '+' ? Operator.Plus : Operator.Minus);
     static PlusMinusSignWithCodeBreak = new StringLexer(
         'PlusMinusSignWithCodeBreak',
         [BasicLexers.PlusMinusSign, BasicLexers.CodeBreak],

@@ -1,70 +1,58 @@
-import { CalculationOperator } from "../enums/operators/calculation-operator";
-import { ComparisonOperator } from "../enums/operators/comparison-operator";
-import { ConditionOperator } from "../enums/operators/condition-operator";
 import { StringDictionary } from "../types/dictionaries";
+import { Operator } from "../types/operators";
 import { BasicLexers } from "./basic-lexers";
 import { CalculationExpression } from "./expressions/calculation-expression";
-import { OperatorExpression } from "./expressions/operator-expression";
 import { Lexer } from "./lexers/lexer";
 import { StringLexer } from "./lexers/string-lexer";
 
 export class CalculationLexers {
     static ComparisonOperator = new StringLexer(
         'ComparisonOperator',
-        [ComparisonOperator.EqualTo, '|', ComparisonOperator.NotEqualTo, '|', ComparisonOperator.NoLessThan, '|', ComparisonOperator.NoGreaterThan, '|', ComparisonOperator.LessThan, '|', ComparisonOperator.GreaterThan]);
+        [Operator.EqualTo, '|', Operator.NotEqualTo, '|', Operator.NoLessThan, '|', Operator.NoGreaterThan, '|', Operator.LessThan, '|', Operator.GreaterThan]);
 
     static CalculationOperator = new StringLexer(
         'CalculationOperator',
-        [CalculationOperator.Plus.toLexerString(), '|', CalculationOperator.Minus, '|', CalculationOperator.MultiplyBy.toLexerString(), '|', CalculationOperator.DividedBy]
+        [Operator.Plus.toLexerString(), '|', Operator.Minus, '|', Operator.MultiplyBy.toLexerString(), '|', Operator.DividedBy]
     );
 
-    static Operator = new Lexer<OperatorExpression>(
+    static Operator = new Lexer<Operator>(
         'Operator',
-        [CalculationLexers.ComparisonOperator, '|', CalculationLexers.CalculationOperator, '|', ConditionOperator.And, '|', ConditionOperator.Or.toLexerString()],
+        [CalculationLexers.ComparisonOperator, '|', CalculationLexers.CalculationOperator, '|', Operator.And, '|', Operator.Or.toLexerString()],
         node => {
             if (node[0].Expression) {
-                return {
-                    Type: 'Comparison',
-                    Operator: node[0].Expression
-                }
+                return node[0].Expression;
             };
 
             if (node[1].Expression) {
-                return {
-                    Type: 'Calculation',
-                    Operator: node[1].Expression
-                }
+                return node[1].Expression;
             }
 
-            return {
-                Type: 'Condition',
-                Operator: node.Value
-            }
+            return node.Value;
         });
 
     static OperatorPriorities: StringDictionary<number> = {
-        [ConditionOperator.Prior]: 0,
-        [ConditionOperator.Is]: -1,
-        [ConditionOperator.Not]: -2,
-        [CalculationOperator.MultiplyBy]: -3,
-        [CalculationOperator.DividedBy]: -3,
-        [CalculationOperator.Plus]: -4,
-        [CalculationOperator.Minus]: -5,
-        [ComparisonOperator.EqualTo]: -6,
-        [ComparisonOperator.NotEqualTo]: -6,
-        [ComparisonOperator.GreaterThan]: -6,
-        [ComparisonOperator.LessThan]: -6,
-        [ComparisonOperator.NoGreaterThan]: -6,
-        [ComparisonOperator.NoLessThan]: -6,
-        [ConditionOperator.And]: -7,
-        [ConditionOperator.Or]: -8
+        [Operator.Prior]: 0,
+        [Operator.Is]: -1,
+        [Operator.Not]: -2,
+        [Operator.MultiplyBy]: -3,
+        [Operator.DividedBy]: -3,
+        [Operator.Plus]: -4,
+        [Operator.Minus]: -5,
+        [Operator.EqualTo]: -6,
+        [Operator.NotEqualTo]: -6,
+        [Operator.GreaterThan]: -6,
+        [Operator.LessThan]: -6,
+        [Operator.NoGreaterThan]: -6,
+        [Operator.NoLessThan]: -6,
+        [Operator.And]: -7,
+        [Operator.Or]: -8
     }
 
     static Calculation: Lexer<CalculationExpression> = new Lexer<CalculationExpression>(
         'Calculation',
         [
             BasicLexers.Value,
-            '|', ConditionOperator.Not, BasicLexers.CodeBreak, () => CalculationLexers.Calculation,
+            '|', Operator.Not, BasicLexers.CodeBreak, () => CalculationLexers.Calculation,
             '|', '('.toLexerString(), BasicLexers.CodeBreak, () => CalculationLexers.Calculation, BasicLexers.CodeBreak, ')'.toLexerString(),
             '|', BasicLexers.SelectField,
             '|', () => CalculationLexers.Calculation, BasicLexers.CodeBreak, CalculationLexers.Operator, BasicLexers.CodeBreak, () => CalculationLexers.Calculation,
@@ -72,27 +60,21 @@ export class CalculationLexers {
         node => {
             if (node[0].Expression !== undefined) {
                 return {
-                    Operator: {
-                        Type: 'Condition',
-                        Operator: ConditionOperator.Is
-                    },
+                    Operator: Operator.Is,
                     Left: node[0].Expression
                 }
             }
 
             if (node[2].Expression !== undefined) {
-                let notPriority = CalculationLexers.OperatorPriorities[ConditionOperator.Not];
-                let notOperator = {
-                    Type: 'Condition',
-                    Operator: ConditionOperator.Not
-                };
+                let notPriority = CalculationLexers.OperatorPriorities[Operator.Not];
+                let notOperator = Operator.Not;
                 let top: CalculationExpression = {
                     Operator: notOperator,
                     Left: node[2].Expression
                 };
                 let mid = top;
 
-                while (CalculationLexers.OperatorPriorities[(mid.Left as CalculationExpression).Operator.Operator] <= notPriority) {
+                while (CalculationLexers.OperatorPriorities[(mid.Left as CalculationExpression).Operator] <= notPriority) {
                     let left = (mid.Left as CalculationExpression);
 
                     mid.Operator = left.Operator;
@@ -110,20 +92,14 @@ export class CalculationLexers {
 
             if (node[4].Expression !== undefined) {
                 return {
-                    Operator: {
-                        Type: 'Condition',
-                        Operator: ConditionOperator.Prior
-                    },
+                    Operator: Operator.Prior,
                     Left: node[4].Expression
                 };
             }
 
             if (node[6].Expression != undefined) {
                 return {
-                    Operator: {
-                        Type: 'Condition',
-                        Operator: ConditionOperator.Is
-                    },
+                    Operator: Operator.Is,
                     Left: node[6].Expression
                 }
             }
@@ -131,13 +107,14 @@ export class CalculationLexers {
             let left = node[7].Expression;
             let right = node[11].Expression;
             let mid;
-            let leftPriority = CalculationLexers.OperatorPriorities[left.Operator.Operator];
-            let midPriority = CalculationLexers.OperatorPriorities[node[9].Expression.Operator];
-            let rightPriority = CalculationLexers.OperatorPriorities[right.Operator.Operator];
+            let operator = node[9].Expression;
+            let leftPriority = CalculationLexers.OperatorPriorities[left.Operator];
+            let midPriority = CalculationLexers.OperatorPriorities[operator];
+            let rightPriority = CalculationLexers.OperatorPriorities[right.Operator];
 
             if (leftPriority >= midPriority) {
                 mid = {
-                    Operator: node[9].Expression,
+                    Operator: operator,
                     Left: left,
                     Right: right.Left
                 };
@@ -146,7 +123,7 @@ export class CalculationLexers {
                     Operator: left.Operator,
                     Left: left.Left,
                     Right: {
-                        Operator: node[9].Expression,
+                        Operator: operator,
                         Left: left.Right,
                         Right: right.Left
                     }

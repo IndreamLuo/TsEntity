@@ -7,22 +7,22 @@ export function entity(name: string | null = null) {
   }
 }
 
-export function column(columnName: string | null = null) {
-  return function <T>(object: Object, propertyName: string) {
+export function column<T>(columnName: string | null = null) {
+  return function (object: Object, propertyName: string) {
     Schema.Base.GetOrAddEntity(object.constructor as ConstructorType<T>)
-      .AddColumnIfNotExist<T>(columnName || propertyName);
+      .AddColumnIfNotExist(columnName || propertyName);
   }
 }
 
 export function id(columnName: string = 'Id') {
   return function <T>(object: Object, propertyName: string) {
     let entityDiagram = Schema.Base.GetOrAddEntity(object.constructor as ConstructorType<any>)
-    entityDiagram.AddColumnIfNotExist<T>(columnName)
+    entityDiagram.AddColumnIfNotExist(columnName)
     entityDiagram.ResetIds(columnName || propertyName);
   }
 }
 
-export function one<T>(getType: (() => T) | any, fromForeignKey: string | null = null) {
+export function one<T>(getType: (() => ConstructorType<T>) | any, fromForeignKey: string | null = null) {
   return function (object: Object, propertyName: string) {
     let foreignKey = fromForeignKey || `${propertyName}Id`;
 
@@ -32,7 +32,7 @@ export function one<T>(getType: (() => T) | any, fromForeignKey: string | null =
   }
 }
 
-export function many<T>(getType: () => T, ...toForeignKeys: string[]) {
+export function many<T>(getType: () => ConstructorType<T>, ...toForeignKeys: string[]) {
   return function (object: Object, propertyName: string) {
     let fromEntity = Schema.Base.GetOrAddEntity(object.constructor as ConstructorType<any>);
 
