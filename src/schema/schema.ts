@@ -40,7 +40,7 @@ export class Schema {
 
     AddRelationship<TFrom, TTo>(isMultiple: Boolean,
         from: EntityDiagram<TFrom>,
-        getToEntityType: () => TTo,
+        getToEntityType: () => ConstructorType<TTo>,
         toName: keyof TFrom | string,
         ...foreignKeys: string[]
     ) {

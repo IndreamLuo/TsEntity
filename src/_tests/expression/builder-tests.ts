@@ -1,5 +1,6 @@
 import { SourceExpressionBuilder } from "../../expression/builder/source-builder";
 import { ReferenceExpression } from "../../expression/expressions/reference-expression";
+import { Operator } from "../../utilities/types/operators";
 import { Company } from "../entities/company";
 import { Employee } from "../entities/employee";
 import { Assert } from "../_framework/assert";
@@ -43,8 +44,57 @@ export class BuilderTests {
     @test()
     BuildFilterExpression() {
         let companiesExpression = SourceExpressionBuilder.New(Company);
-        let employeesExpression = companiesExpression.Reference(company => company.Employees);
+        let filteredCompaniesExpression = companiesExpression.Filter(company => company.Id == 7);
+        Assert.HasSameStructure(filteredCompaniesExpression, {
+            EntityConstructor: companiesExpression.EntityConstructor,
+            From: companiesExpression,
+            Condition: {
+                Operator: Operator.EqualTo,
+                LeftValue: {
+                    Of: {
+                        EntityConstructor: companiesExpression.EntityConstructor,
+                        Of: {
+                            EntityConstructor: companiesExpression.EntityConstructor
+                        }
+                    },
+                    Diagram: {
+                        Name: 'Id'
+                    }
+                },
+                RightValue: { Value: 7 }
+            }
+        });
 
-        // let filteredCompaniesExpression = companiesExpression.Filter(company => company.Id == 7);
+        let employeesExpression = companiesExpression.Reference(company => company.Employees);
+        let filteredEmployeesExpression = employeesExpression.Filter([companiesExpression.Token()], (employee, company) => employee.LastUpdated == company.LastUpdated);
+        Assert.HasSameStructure(filteredEmployeesExpression, {
+            EntityConstructor: employeesExpression.EntityConstructor,
+            From: employeesExpression,
+            Condition: {
+                Operator: Operator.EqualTo,
+                LeftValue: {
+                    Of: {
+                        EntityConstructor: employeesExpression.EntityConstructor,
+                        Of: {
+                            EntityConstructor: employeesExpression.EntityConstructor
+                        }
+                    },
+                    Diagram: {
+                        Name: 'LastUpdated'
+                    }
+                },
+                RightValue: {
+                    Of: {
+                        EntityConstructor: companiesExpression.EntityConstructor,
+                        Of: {
+                            EntityConstructor: companiesExpression.EntityConstructor
+                        }
+                    },
+                    Diagram: {
+                        Name: 'LastUpdated'
+                    }
+                }
+            }
+        });
     }
 }

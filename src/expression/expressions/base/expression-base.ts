@@ -1,1 +1,1 @@
-export class ExpressionBase<T> {}
+export class ExpressionBase {}

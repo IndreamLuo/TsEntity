@@ -1,4 +1,4 @@
-import { entity, one } from "../../schema/decorators";
+import { column, entity, one } from "../../schema/decorators";
 import { Company } from "./company";
 
 @entity()
@@ -7,4 +7,7 @@ export class Employee {
 
     @one(() => Company)
     Company!: Company;
+
+    @column()
+    LastUpdated!: Date;
 }

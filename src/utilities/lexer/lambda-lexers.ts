@@ -37,9 +37,17 @@ export class LambdaLexers {
             return [node[0].Expression].concat(node[1].Expression)
         });
 
+    static LambdaParameters = new Lexer<string[]>(
+        "LambdaParameters",
+        [BasicLexers.Identifier, '|', '('.toLexerString(), BasicLexers.CodeBreak, LambdaLexers.Parameters, BasicLexers.CodeBreak, ')'.toLexerString()],
+        node => node[0].Expression !== undefined
+            ? [node[0].Expression]
+            : node[2].Expression
+    );
+
     static SelectFieldLambda = new Lexer<LambdaExpression<SelectFieldExpression>>(
         "SelectField",
-        [BasicLexers.Identifier, BasicLexers.CodeBreak, '=>', BasicLexers.CodeBreak, BasicLexers.SelectField],
+        [LambdaLexers.LambdaParameters, BasicLexers.CodeBreak, '=>', BasicLexers.CodeBreak, BasicLexers.SelectField],
         node => {
             let identifier = node[3].Expression.Identifier;
             while (typeof(identifier) === 'object') {
@@ -47,21 +55,21 @@ export class LambdaLexers {
             }
 
             Assure.AreEqual(
-                node[0].Expression,
+                node[0].Expression[0],
                 identifier,
                 () => `"${node[0].Expression}" and "${node[3].Expression.Identifier}" are not equal. A select-field lambda should be using the parameter input.`);
 
             return {
-                Parameters: [node[0].Expression],
+                Parameters: node[0].Expression,
                 Expression: node[3].Expression
             }
         });
 
     static CalculationLambda = new Lexer<LambdaExpression<CalculationExpression>>(
         "CalculationLambda",
-        [BasicLexers.Identifier, BasicLexers.CodeBreak, '=>', BasicLexers.CodeBreak, CalculationLexers.Calculation],
+        [LambdaLexers.LambdaParameters, BasicLexers.CodeBreak, '=>', BasicLexers.CodeBreak, CalculationLexers.Calculation],
         node => ({
-            Parameters: [node[0].Expression],
+            Parameters: node[0].Expression,
             Expression: node[3].Expression
         })
     )
