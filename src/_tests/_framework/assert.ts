@@ -23,7 +23,10 @@ export class Assert {
 
     static WillThrowError(call: Function, errorMessage: string) {
         try {
-            call();
+            let invoke = call();
+            if (invoke && invoke.constructor === Promise) {
+                (async () => await invoke)();
+            }
             throw Error('No error thrown.');
         } catch (error) {
             Assert.AreEqual(error.message, errorMessage);

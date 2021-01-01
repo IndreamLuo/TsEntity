@@ -23,6 +23,8 @@
   },
   "dependencies": {
     "@types/node": "^13.13.16",
+    "msnodesqlv8": "^2.0.9",
+    "mssql": "^6.3.1",
     "reflect-metadata": "^0.1.13"
   }
 }
