@@ -8,7 +8,7 @@ import { test, tests } from "../_framework/decorators";
 export class SchemaTests {
     @test()
     SchemaBuiltCorrectly() {
-        Assert.AreEqual(Object.keys(Schema.Base.Entities).length, 2);
+        Assert.AreEqual(Object.keys(Schema.Base.Entities).length, 3);
 
         Assert.AreEqual(Schema.Base.Entities[Company.name].Constructor, Company);
         Assert.AreEqual(Schema.Base.Entities[Company.name].Name, "Company");

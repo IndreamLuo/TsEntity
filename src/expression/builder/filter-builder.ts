@@ -95,7 +95,7 @@ function ConvertParsedToTokenExpression(parameters: StringDictionary<any>, parse
 
     if (identifier.constructor === TokenExpression || identifier.constructor === ReferenceExpression) {
         let entityDiagram = Schema.Base.GetOrAddEntity(identifier.EntityConstructor);
-        let relationship = Schema.Base.Relationships[entityDiagram.Name][field];
+        let relationship = entityDiagram.GetRelationship(field);
         
         if (relationship == null) {
             return identifier.Column(field);

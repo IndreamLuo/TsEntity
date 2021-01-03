@@ -63,3 +63,5 @@ typings/
 lib/
 src/tests/*.db
 src/*.js
+package-lock.json
+src/_tests/config.json

@@ -9,6 +9,14 @@ export class Assure {
         Assure.IsTrue(!value, buildErrorMessage);
     }
 
+    static IsNullOrUndefined(value: any, buildErrorMessage: () => string) {
+        Assure.IsTrue(value === null || value === undefined, buildErrorMessage);
+    }
+
+    static IsNotNullOrUndefined(value: any, buildErrorMessage: () => string) {
+        Assure.IsTrue(value !== null && value !== undefined, buildErrorMessage);
+    }
+
     static AreEqual<T>(value1: T, value2: T, buildErrorMessage: () => string) {
         Assure.IsTrue(value1 === value2, buildErrorMessage);
     }

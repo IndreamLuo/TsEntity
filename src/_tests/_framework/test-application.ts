@@ -9,44 +9,60 @@ export class TestApplication {
         let success = 0;
         let failed = 0;
 
-        Object.keys(TestConfiguration.TestClasses).forEach(key => {
-            TestConfiguration.TestClasses[key].forEach(testClass => {
-                let allOfClass = 0;
-                let successOfClass = 0;
-                let failedOfClass = 0;
+        (async () => {
+            await Promise.all(Object.keys(TestConfiguration.TestClasses).map(async key => {
+                await Promise.all(TestConfiguration.TestClasses[key].map(async testClass => {
+                    let allOfClass = 0;
+                    let successOfClass = 0;
+                    let failedOfClass = 0;
 
-                let tests = new testClass.Constructor();
-                let errors: StringDictionary<string> = {};
-
-                testClass.Tests.forEach(test => {
-                    allOfClass++;
-
-                    try {
-                        tests[test]();
-                        successOfClass++;
-                    } catch(error) {
-                        failedOfClass++;
-                        errors[test] = error;
+                    let tests = new testClass.Constructor();
+                    if (tests.init) {
+                        let init = tests.init();
+                        if (init && init instanceof Promise) {
+                            await init;
+                        }
                     }
-                });
-                
-                if (successOfClass == allOfClass) {
-                    console.info(`[${tests.constructor.name}]: (${successOfClass}/${allOfClass})`);
-                } else {
-                    console.error(`[${tests.constructor.name}]: (${successOfClass}/${allOfClass})`);
-                }
 
-                Object.keys(errors).forEach(test => {
-                    console.error(test);
-                    console.error(errors[test]);
-                })
+                    let errors: StringDictionary<string> = {};
 
-                all += allOfClass;
-                success += successOfClass;
-                failed += failedOfClass;
-            });
-        });
+                    await Promise.all(testClass.Tests.map(async test => {
+                        allOfClass++;
 
-        console.info(`All success: (${success}/${all})`);
+                        try {
+                            let result = tests[test]();
+                            if (result && result instanceof Promise) {
+                                await result;
+                            }
+                            successOfClass++;
+                        } catch(error) {
+                            failedOfClass++;
+                            errors[test] = error;
+                        }
+                    }));
+
+                    if (tests.dispose) {
+                        let dispose = tests.dispose();
+                        if (dispose && dispose instanceof Promise) {
+                            await dispose;
+                        }
+                    }
+                    
+                    (successOfClass == allOfClass ? console.info : console.error)(`[${tests.constructor.name}]: (${successOfClass}/${allOfClass})`);
+
+                    Object.keys(errors).forEach(test => {
+                        console.error(test);
+                        console.error(errors[test]);
+                    })
+
+                    all += allOfClass;
+                    success += successOfClass;
+                    failed += failedOfClass;
+                }));
+            }));
+
+            (success === all ? console.info : console.error)(`All success: (${success}/${all})`);
+        })();
+
     }
 }

@@ -1,13 +1,17 @@
-import { column, entity, one } from "../../schema/decorators";
+import { column, entity, many, one } from "../../schema/decorators";
+import { Assignment } from "./assignment";
 import { Company } from "./company";
 
 @entity()
 export class Employee {
     constructor() {}
 
+    @column()
+    LastUpdated!: Date;
+
     @one(() => Company)
     Company!: Company;
 
-    @column()
-    LastUpdated!: Date;
+    @many(() => Assignment)
+    Assignments!: Assignment[];
 }
