@@ -28,7 +28,7 @@ EntityExpressionBase.prototype.Reference = function <T, TTo>(to: (from: T) => TT
     let entityDiagram = Schema.Base.GetOrAddEntity(this.EntityConstructor);
     let from = this;
     references.forEach(reference => {
-        let relationship = Schema.Base.Relationships[entityDiagram.Name][reference];
+        let relationship = entityDiagram.GetRelationship(reference)!;
         from = new ReferenceExpression(from, relationship);
         entityDiagram = Schema.Base.GetOrAddEntity(relationship.GetToType());
     });

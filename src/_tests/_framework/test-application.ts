@@ -19,7 +19,7 @@ export class TestApplication {
                     let tests = new testClass.Constructor();
                     if (tests.init) {
                         let init = tests.init();
-                        if (init && init.constructor === Promise) {
+                        if (init && init instanceof Promise) {
                             await init;
                         }
                     }
@@ -31,7 +31,7 @@ export class TestApplication {
 
                         try {
                             let result = tests[test]();
-                            if (result && result.constructor === Promise) {
+                            if (result && result instanceof Promise) {
                                 await result;
                             }
                             successOfClass++;
@@ -43,7 +43,7 @@ export class TestApplication {
 
                     if (tests.dispose) {
                         let dispose = tests.dispose();
-                        if (dispose && dispose.constructor === Promise) {
+                        if (dispose && dispose instanceof Promise) {
                             await dispose;
                         }
                     }
