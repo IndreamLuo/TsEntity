@@ -1,5 +1,6 @@
 import { SourceExpressionBuilder } from "../../../../expression/builder/source-builder";
 import { MsSqlQueryBuilder } from "../../../../query/builder/mssql/mssql-query-builder";
+import { QueryPlanGenerator } from "../../../../query/plan/query-plan-generator";
 import { Schema } from "../../../../schema/schema";
 import { Configuration } from "../../../../utilities/configuration";
 import { Assignment } from "../../../entities/assignment";
@@ -14,6 +15,8 @@ export class MsSqlQueryBuilderTests {
         let mssql = require('mssql/msnodesqlv8');
         let connectionString = Configuration.mssql;
         
+        this.QueryPlanGenerator = new QueryPlanGenerator();
+        this.MsSqlQueryBuilder = new MsSqlQueryBuilder(Schema.Base);
         this.MsSqlClient = await (mssql.connect(connectionString) as Promise<any>);
     }
 
@@ -21,15 +24,17 @@ export class MsSqlQueryBuilderTests {
         this.MsSqlClient.close();
     }
 
+    QueryPlanGenerator!: QueryPlanGenerator;
+    MsSqlQueryBuilder!: MsSqlQueryBuilder;
     MsSqlClient!: any;
 
     @test()
-    async GetSourceExpressionQuery() {
+    async BuildSourceExpressionQuery() {
         let sourceExpression = SourceExpressionBuilder.New(Company);
 
-        let msSqlQueryBuilder = new MsSqlQueryBuilder(Schema.Base);
-        let query = msSqlQueryBuilder.BuildQuery(sourceExpression);
-        let queryString = msSqlQueryBuilder.BuildQueryString(query);
+        let queryPlan = this.QueryPlanGenerator.BuildQueryPlan(sourceExpression);
+        let query = this.MsSqlQueryBuilder.BuildQuery(queryPlan);
+        let queryString = this.MsSqlQueryBuilder.BuildQueryString(query);
 
         Assert.IsTrue(queryString);
         Assert.IsTrue(queryString.indexOf('SELECT') >= 0);
@@ -45,13 +50,13 @@ export class MsSqlQueryBuilderTests {
     }
 
     @test()
-    async GetReferenceExpressionQuery() {
+    async BuildReferenceExpressionQuery() {
         let companiesExpression = SourceExpressionBuilder.New(Company);
         let employeesExpression = companiesExpression.Reference(company => company.Employees);
 
-        let msSqlQueryBuilder = new MsSqlQueryBuilder(Schema.Base);
-        let query = msSqlQueryBuilder.BuildQuery(employeesExpression);
-        let queryString = msSqlQueryBuilder.BuildQueryString(query);
+        let queryPlan = this.QueryPlanGenerator.BuildQueryPlan(employeesExpression);
+        let query = this.MsSqlQueryBuilder.BuildQuery(queryPlan);
+        let queryString = this.MsSqlQueryBuilder.BuildQueryString(query);
 
         Assert.IsTrue(queryString);
         Assert.IsTrue(queryString.indexOf('SELECT') >= 0);
@@ -65,11 +70,12 @@ export class MsSqlQueryBuilderTests {
             Assert.IsTrue((employee as any)['Company.Id']);
             Assert.IsTrue((employee as any)['Company.Name']);
             Assert.IsTrue((employee as any)['Company.LastUpdated']);
-        })
+        });
 
         let assignmentsExpression = employeesExpression.Reference(employee => employee.Assignments);
-        query = msSqlQueryBuilder.BuildQuery(assignmentsExpression);
-        queryString = msSqlQueryBuilder.BuildQueryString(query);
+        queryPlan = this.QueryPlanGenerator.BuildQueryPlan(assignmentsExpression);
+        query = this.MsSqlQueryBuilder.BuildQuery(queryPlan);
+        queryString = this.MsSqlQueryBuilder.BuildQueryString(query);
 
         let assignments: Assignment[] = (await this.MsSqlClient.request().query(queryString)).recordset;
         Assert.IsTrue(assignments);
@@ -81,6 +87,16 @@ export class MsSqlQueryBuilderTests {
             Assert.IsTrue((assignment as any)['Employee.Company.Id']);
             Assert.IsTrue((assignment as any)['Employee.Company.Name']);
             Assert.IsTrue((assignment as any)['Employee.Company.LastUpdated']);
-        })
+        });
+    }
+
+    @test()
+    BuildFilterExpressionQuery() {
+        let companiesExpression = SourceExpressionBuilder.New(Company);
+        let employeesExpression = companiesExpression.Reference(company => company.Employees);
+
+        let queryPlan = this.QueryPlanGenerator.BuildQueryPlan(employeesExpression);
+        let query = this.MsSqlQueryBuilder.BuildQuery(queryPlan);
+        let queryString = this.MsSqlQueryBuilder.BuildQueryString(query);
     }
 }

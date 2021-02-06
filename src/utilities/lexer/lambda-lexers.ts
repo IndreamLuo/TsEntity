@@ -84,7 +84,7 @@ export class LambdaLexers {
             let calculationLambdaExpression = node[0].Expression! as LambdaExpression<CalculationExpression>;
 
             let from = calculationLambdaExpression.Parameters[0];
-            let to = calculationLambdaExpression.Parameters[0];
+            let to = calculationLambdaExpression.Parameters[1];
 
             function reduceExpression(calculationExpression: any): any {
                 if (calculationExpression === undefined) {
@@ -113,7 +113,7 @@ export class LambdaLexers {
                                     }
                         }
                     } else if (typeof(calculationExpression.Field) === 'string' && typeof(calculationExpression.Identifier) === 'string') {
-
+                        return calculationExpression;
                     }
                 }
 
@@ -122,14 +122,27 @@ export class LambdaLexers {
 
             let reducedExpression = reduceExpression(calculationLambdaExpression.Expression);
 
-            function convertExpressionToPairings(calculationExpression: CalculationExpression, pairings: KeyPairingExpression[]) {
+            function convertExpressionToPairings(expression: any, pairings: KeyPairingExpression[]) {
+                if (typeof(expression.Field) === 'string' && typeof(expression.Identifier) === 'string') {
+                    if (expression.Identifier === from) {
+                        pairings.push({
+                            FromKey: expression.Field
+                        });
+                    } else {
+                        Assure.AreEqual(expression.Identifier, to, () => `Unknowned identifier [${rightSelectField.Identifier}]`);
+
+                        pairings.push({
+                            ToKey: expression.Field
+                        });
+                    }
+                    
+                    return;
+                }
+
+                let calculationExpression = expression as CalculationExpression;
+
                 let leftExpression = calculationExpression.Left;
                 let rightExpression = calculationExpression.Right;
-
-                if (calculationExpression.Operator === Operator.And) {
-                    convertExpressionToPairings(leftExpression as CalculationExpression, pairings);
-                    convertExpressionToPairings(rightExpression as CalculationExpression, pairings);
-                }
 
                 let leftSelectField = leftExpression as SelectFieldExpression;
                 let rightSelectField = rightExpression as SelectFieldExpression;
@@ -141,16 +154,50 @@ export class LambdaLexers {
 
                 Assure.AreEqual(leftSelectField.Identifier, from, () => `Pairing doesn't use [${from}].`);
 
-                if (to) {
-                    Assure.AreEqual(rightSelectField.Identifier, to, () => `Pairing doesn't use [${to}].`);
-                } else {
-                    Assure.IsNullOrUndefined(rightSelectField, () => `Unknowned identifier [${rightSelectField.Identifier}]`);
-                }
+                if (calculationExpression.Operator === Operator.And || calculationExpression.Operator === Operator.EqualTo) {
+                    let lastLength = pairings.length;
 
-                pairings.push({
-                    FromKey: leftSelectField.Field,
-                    ToKey: rightSelectField?.Field
-                });
+                    convertExpressionToPairings(leftExpression as CalculationExpression, pairings);
+                    convertExpressionToPairings(rightExpression as CalculationExpression, pairings);
+
+                    let rightPairing = pairings[lastLength + 1];
+                    if (calculationExpression.Operator === Operator.EqualTo) {
+                        Assure.AreEqual(lastLength, lastLength + 2, () => 'Unknown pairing pattern. Should be as "from.Id == to.FromId".');
+
+                        if (to) {
+                            Assure.AreEqual(rightSelectField.Identifier, to, () => `Pairing doesn't use [${to}].`);
+                        } else {
+                            Assure.IsNullOrUndefined(rightSelectField, () => `Unknowned identifier [${rightSelectField.Identifier}]`);
+                        }
+
+                        pairings.pop();
+                        let lastLeftPairing = pairings.pop()!;
+
+                        Assure.IsNotNullOrUndefined(
+                            lastLeftPairing!.ToKey || rightPairing!.ToKey,
+                            () => `Cannot accept filter condition such as "${from}.${lastLeftPairing!.FromKey} == ${from}.${rightPairing!.FromKey}".`
+                        );
+                        Assure.IsNotNullOrUndefined(
+                            lastLeftPairing!.FromKey || rightPairing!.FromKey,
+                            () => `Cannot accept filter condition such as "${to}.${lastLeftPairing!.ToKey} == ${to}.${rightPairing!.ToKey}".`
+                        );
+
+                        pairings.push({
+                            FromKey: lastLeftPairing.FromKey || rightPairing.ToKey,
+                            ToKey: lastLeftPairing.ToKey || rightPairing.ToKey
+                        })
+                    } else if ((rightExpression as SelectFieldExpression).Identifier) {
+                        Assure.AreEqual(
+                            from,
+                            (leftExpression as SelectFieldExpression).Identifier,
+                            () => `Unknowned identifier [${rightSelectField.Identifier}]`);
+
+                        Assure.AreEqual(
+                            from,
+                            (rightExpression as SelectFieldExpression).Identifier,
+                            () => `Unknowned identifier [${rightSelectField.Identifier}]`);
+                    }
+                }
             }
 
             let pairingExpression: KeyPairingExpression[] = [];

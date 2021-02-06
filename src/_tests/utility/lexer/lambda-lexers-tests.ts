@@ -74,7 +74,7 @@ export class LambdaLexersTests {
     }
 
     @test()
-    ParseScriptsOnSelectFieldLambda() {
+    ParseScriptsOnPairingPatternLambda() {
         let codeBreaks = ' \t\r\n \t\r\n';
         let selectFieldLambda1 = 'a => a.b';
         let selectFieldLambda2 = 'a=>a.b';
@@ -104,5 +104,36 @@ export class LambdaLexersTests {
 
         AssertLexer.CanParse(LambdaLexers.SelectFieldLambda, selectFieldLambda8, selectFieldLambda9, selectFieldLambda10);
         AssertLexer.CannotParse(LambdaLexers.SelectFieldLambda, selectFieldLambda11);
+    }
+
+    @test()
+    ParseScriptsOnSelectFieldLambda() {
+        let codeBreaks = ' \t\r\n \t\r\n';
+        let selectFieldLambda1 = 'a => a.b';
+        let selectFieldLambda2 = 'a=>a.b';
+        let selectFieldLambda3 = `a => ( a.b${codeBreaks})`;
+        let selectFieldLambda4 = 'a => a.b && a.c';
+        let selectFieldLambda5 = 'a => (a.b) && a.c';
+        let selectFieldLambda6 = 'a=>=>a.b';
+        let selectFieldLambda7 = 'a=>b.a';
+        let selectFieldLambda8 = '(a, b) => a.b.c';
+        let selectFieldLambda9 = `(${codeBreaks}a, b, c) => a.b`;
+        let selectFieldLambda10 = '(a ) => a.b';
+        let selectFieldLambda11 = 'a, b => a.b.c';
+
+        AssertLexer.CanParse(LambdaLexers.PairingPatternLambda, selectFieldLambda1, selectFieldLambda2, selectFieldLambda3).forEach(result => {
+            Assert.AreEqual(result.Parse.Expression!.Parameters[0], 'a');
+            Assert.AreEqual(result.Parse.Expression!.Expression.length, 1);
+            Assert.AreEqual(result.Parse.Expression!.Expression[0].FromKey, 'b');
+        });
+
+        AssertLexer.CanParse(LambdaLexers.PairingPatternLambda, selectFieldLambda4, selectFieldLambda5).forEach(result => {
+            Assert.AreEqual(result.Parse.Expression!.Parameters[0], 'a');
+            Assert.AreEqual(result.Parse.Expression!.Expression.length, 2);
+            Assert.AreEqual(result.Parse.Expression!.Expression[0].FromKey, 'b');
+            Assert.AreEqual(result.Parse.Expression!.Expression[1].FromKey, 'c');
+        });
+
+        AssertLexer.CanParse(LambdaLexers.PairingPatternLambda, selectFieldLambda9, selectFieldLambda10);
     }
 }
