@@ -3,6 +3,7 @@ import { ReferenceExpression } from "../../expression/expressions/reference-expr
 import { SourceExpression } from "../../expression/expressions/source-expression";
 import { Schema } from "../../schema/schema";
 import { Operator } from "../../utilities/types/operators";
+import { QueryPlan } from "../plan/query-plan";
 import { Calculation, CalculationValue } from "../sqls/calculation";
 import { Column } from "../sqls/column";
 import { Join } from "../sqls/join";
@@ -15,10 +16,10 @@ import { QueryBuilder } from "./query-builder";
 export abstract class SqlQueryBuilder implements QueryBuilder {
     constructor(public Schema: Schema) {}
 
-    BuildQuery(expression: ExpressionBase): SqlQuery {
-        let query = new SqlQuery();
+    BuildQuery(queryPlan: QueryPlan): SqlQuery {
+        let query = new SqlQuery(queryPlan);
 
-        this.BuildQueryWithExpression(query, expression);
+        query.QueryPlan.StagingExpressions.forEach(expression => this.BuildQueryWithExpression(query, expression));
 
         return query;
     }
@@ -61,7 +62,7 @@ export abstract class SqlQueryBuilder implements QueryBuilder {
             select.Columns.push(column);
         });
 
-        sqlQuery.SubQueries.push(select);
+        sqlQuery.AddSubQuery(select);
     }
 
     BuildQueryWithReferenceExpression<TFrom, TTo>(sqlQuery: SqlQuery, referenceExpression: ReferenceExpression<TFrom, TTo>) {
@@ -69,7 +70,7 @@ export abstract class SqlQueryBuilder implements QueryBuilder {
 
         let select: Select;
         if (!sqlQuery.SubQueries.length || !(sqlQuery.SubQueries[sqlQuery.SubQueries.length - 1] instanceof Select)) {
-            sqlQuery.SubQueries.push(new Select());
+            sqlQuery.AddSubQuery(new Select(), referenceExpression);
         }
         select = sqlQuery.SubQueries[sqlQuery.SubQueries.length - 1] as Select;
 

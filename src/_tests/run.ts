@@ -7,6 +7,7 @@ import { SchemaTests } from "./schema/schema-tests";
 import { BuilderTests } from "./expression/builder-tests";
 import { CalculationLexersTests } from "./utility/lexer/calculation-lexers-tests";
 import { MsSqlQueryBuilderTests } from "./query/builder/mssql/mssql-query-builder-tests";
+import { QueryPlanGeneratorTests } from "./query/plan/query-plan-generator-tests";
 
 TestApplication.Include(HelloWorldTests);
 // TestApplication.Include(DbContextTests);
@@ -19,6 +20,7 @@ TestApplication.Include(SchemaTests);
 
 TestApplication.Include(BuilderTests);
 
+TestApplication.Include(QueryPlanGeneratorTests);
 TestApplication.Include(MsSqlQueryBuilderTests);
 
 TestApplication.RunAllTests();

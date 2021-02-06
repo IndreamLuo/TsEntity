@@ -34,6 +34,19 @@ export class Assert {
     }
 
     static HasSameStructure(object: any, structure: any, skipItems: any[] = [], stack: string[] = []) {
+        if (skipItems.some(item => item === structure)) {
+            return;
+        }
+
+        if (Array.isArray(object)) {
+            Assert.IsTrue(Array.isArray(structure), () => `Subject is not an array while object is an array[${object.length}].`);
+            Assert.AreEqual(object.length, structure.length, () => `Subject array length(${object.length}) is not same as object array length(${structure.length}).`);
+            for (let index = 0; index < object.length; index++) {
+                Assert.HasSameStructure(object[index], structure[index], skipItems, stack);
+            }
+            return;
+        }
+
         if (typeof(structure) !== 'object' || object === null || object === undefined) {
             Assert.AreEqual(object, structure, () => {
                 let stacks = stack.join('.');
@@ -44,11 +57,7 @@ export class Assert {
 
         Object.keys(structure).forEach(key => {
             if (typeof(structure[key]) === 'object') {
-                if (skipItems.some(item => item === structure[key])) {
-                    return;
-                } else {
-                    skipItems.push(structure[key]);
-                }
+                skipItems.push(structure[key]);
             }
 
             stack.push(key);

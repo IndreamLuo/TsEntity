@@ -1,7 +1,7 @@
-import { ExpressionBase } from "../../expression/expressions/base/expression-base";
 import { StatementBase } from "../base/statement-base";
+import { QueryPlan } from "../plan/query-plan";
 
 export interface QueryBuilder {
-    BuildQuery(expression: ExpressionBase): StatementBase;
+    BuildQuery(queryPlan: QueryPlan): StatementBase;
     BuildQueryString(query: StatementBase): string;
 }
