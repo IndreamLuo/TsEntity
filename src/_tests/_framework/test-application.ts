@@ -24,7 +24,7 @@ export class TestApplication {
                         }
                     }
 
-                    let errors: StringDictionary<string> = {};
+                    let errors: StringDictionary<Error> = {};
 
                     await Promise.all(testClass.Tests.map(async test => {
                         allOfClass++;
@@ -51,8 +51,9 @@ export class TestApplication {
                     (successOfClass == allOfClass ? console.info : console.error)(`[${tests.constructor.name}]: (${successOfClass}/${allOfClass})`);
 
                     Object.keys(errors).forEach(test => {
-                        console.error(test);
-                        console.error(errors[test]);
+                        console.error(`<${test}>`);
+                        console.error(errors[test].message);
+                        console.error(errors[test].stack);
                     })
 
                     all += allOfClass;
@@ -63,6 +64,5 @@ export class TestApplication {
 
             (success === all ? console.info : console.error)(`All success: (${success}/${all})`);
         })();
-
     }
 }

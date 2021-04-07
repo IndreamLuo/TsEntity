@@ -1,3 +1,3 @@
 import { ExpressionBase } from "./expression-base";
 
-export class ValueExpressionBase<T> extends ExpressionBase {}
+export abstract class ValueExpressionBase<T> extends ExpressionBase {}
