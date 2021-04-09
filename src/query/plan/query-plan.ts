@@ -9,6 +9,10 @@ export class QueryPlan {
     StagingExpressions: ExpressionBase[] = [];
     IndexedStagingExpressions: NumberDictionary<{ Index: number, Expression: ExpressionBase}> = {};
 
+    Contains(expression: ExpressionBase): Boolean {
+        return !!this.IndexedAllExpressions[expression.Id];
+    }
+
     AddExpression(expression: ExpressionBase) {
         if (!this.IndexedAllExpressions[expression.Id]) {
             this.IndexedAllExpressions[expression.Id] = {

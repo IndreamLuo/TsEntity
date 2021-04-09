@@ -30,7 +30,7 @@ function filter<T>(this: EntityExpressionBase<T>, parameters: any[] | ((item: T)
         parameters = [];
     }
 
-    parameters = [this.Token()].concat(parameters) as [];
+    parameters = [this.Token()].concat(parameters);
 
     let conditionExpression = condition!.toString();
     let calculationExpressionLambdaTreeNode = LambdaLexers.CalculationLambda.Parse(conditionExpression);
@@ -41,15 +41,15 @@ function filter<T>(this: EntityExpressionBase<T>, parameters: any[] | ((item: T)
 
     let calculationExpression = calculationExpressionLambdaTreeNode.Expression!.Expression;
 
-    let calculateExpression = ConvertParsedToCalculationExpression(referencedParameters, calculationExpression);
+    let calculateExpression = ConvertParsedToCalculationExpression(this.Schema, referencedParameters, calculationExpression);
     
     return new FilterExpression(this, calculateExpression);
 }
 
-function ConvertParsedToCalculationExpression(parameters: StringDictionary<any>, calculationExpression: CalculationExpression): ValueExpressionBase<any> {
+function ConvertParsedToCalculationExpression(schema: Schema, parameters: StringDictionary<any>, calculationExpression: CalculationExpression): ValueExpressionBase<any> {
     switch (calculationExpression.Operator) {
         case Operator.Prior:
-            return ConvertParsedToCalculationExpression(parameters, calculationExpression.Left as CalculationExpression);
+            return ConvertParsedToCalculationExpression(schema, parameters, calculationExpression.Left as CalculationExpression);
         case Operator.Is:
             switch (typeof(calculationExpression.Left)) {
                 case 'boolean':
@@ -59,10 +59,10 @@ function ConvertParsedToCalculationExpression(parameters: StringDictionary<any>,
                 case 'string':
                     return new ConstantExpression<String>(calculationExpression.Left);
                 case 'object':
-                    return ConvertParsedToTokenExpression(parameters, calculationExpression.Left as SelectFieldExpression);
+                    return ConvertParsedToTokenExpression(schema, parameters, calculationExpression.Left as SelectFieldExpression);
             }
         case Operator.Not:
-            return new NotExpression(ConvertParsedToCalculationExpression(parameters, calculationExpression.Left as CalculationExpression));
+            return new NotExpression(ConvertParsedToCalculationExpression(schema, parameters, calculationExpression.Left as CalculationExpression));
         case Operator.And:
         case Operator.Or:
         case Operator.Plus:
@@ -77,24 +77,24 @@ function ConvertParsedToCalculationExpression(parameters: StringDictionary<any>,
         case Operator.NoGreaterThan:
             return new CalculateExpression(
                 calculationExpression.Operator,
-                ConvertParsedToCalculationExpression(parameters, calculationExpression.Left as CalculationExpression),
-                ConvertParsedToCalculationExpression(parameters, calculationExpression.Right as CalculationExpression)
+                ConvertParsedToCalculationExpression(schema, parameters, calculationExpression.Left as CalculationExpression),
+                ConvertParsedToCalculationExpression(schema, parameters, calculationExpression.Right as CalculationExpression)
             )
     }
 }
 
-function ConvertParsedToTokenExpression(parameters: StringDictionary<any>, parsed: SelectFieldExpression): ValueExpressionBase<any> {
+function ConvertParsedToTokenExpression(schema: Schema, parameters: StringDictionary<any>, parsed: SelectFieldExpression): ValueExpressionBase<any> {
     let field = parsed.Field;
     let identifier = typeof(parsed.Identifier) !== 'string'
-        ? ConvertParsedToTokenExpression(parameters, parsed.Identifier as SelectFieldExpression)
+        ? ConvertParsedToTokenExpression(schema, parameters, parsed.Identifier as SelectFieldExpression)
         : parameters[parsed.Identifier as string];
 
     if (identifier === undefined) {
         throw SyntaxError(`Parameter "${parsed.Identifier}" is not in input parameters. For parameter(s) other than token, a parameter is needed. For example: companies.fileter([b, now], (company, b) => company.Id == 0 && b.Date == now)`);
     }
 
-    if (identifier.constructor === TokenExpression || identifier.constructor === ReferenceExpression) {
-        let entityDiagram = Schema.Base.GetOrAddEntity(identifier.EntityConstructor);
+    if (identifier instanceof TokenExpression || identifier instanceof ReferenceExpression) {
+        let entityDiagram = schema.GetOrAddEntity(identifier.EntityConstructor);
         let relationship = entityDiagram.GetRelationship(field);
         
         if (relationship == null) {
@@ -102,8 +102,10 @@ function ConvertParsedToTokenExpression(parameters: StringDictionary<any>, parse
         }
 
         return new ReferenceExpression(identifier, relationship);
-    } else if (identifier.constructor === ColumnExpression) {
+    } else if (identifier instanceof ColumnExpression) {
         throw Error();
+    } else if (identifier instanceof Date || typeof(identifier) === 'boolean' || typeof(identifier) === 'number' || typeof(identifier) === 'string') {
+        return new ConstantExpression(identifier);
     }
 
     throw Error();

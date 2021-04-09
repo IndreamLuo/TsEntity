@@ -1,26 +1,32 @@
 import { ExpressionBase } from "../../expression/expressions/base/expression-base";
-import { NumberDictionary } from "../../utilities/types/dictionaries";
 import { QueryPlan } from "../plan/query-plan";
+import { ExpressionStatementStack } from "./expression-statement-stack";
+import { Select } from "./select";
 import { SqlStatementBase } from "./sql-statement-base";
 
 export class SqlQuery extends SqlStatementBase {
     constructor (public QueryPlan: QueryPlan) {
-        super();
+        super(undefined);
     }
 
-    QueriedExpressions: NumberDictionary<{ Expression: ExpressionBase, SubQueryIndex: number }> = {};
+    ExpressionStatementStack = new ExpressionStatementStack();
+
     SubQueries: SqlStatementBase[] = [];
 
-    AddSubQuery(subQuery: SqlStatementBase): void;
-    AddSubQuery(subQuery: SqlStatementBase, expression: ExpressionBase): void;
-    AddSubQuery(subQuery: SqlStatementBase, expression?: ExpressionBase) {
-        if (expression) {
-            this.QueriedExpressions[expression.Id] = {
-                Expression: expression,
-                SubQueryIndex: this.SubQueries.length
-            }
-        }
-
+    private AddSubQuery(subQuery: Select) {
         this.SubQueries.push(subQuery);
+    }
+
+    CreateAndAddSelect(expression: ExpressionBase) {
+        let select = new Select(this);
+
+        this.ExpressionStatementStack.AddForExpressionStatement(expression, select);
+        this.AddSubQuery(select);
+
+        return select;
+    }
+
+    GetLast() {
+        return this.SubQueries[this.SubQueries.length - 1];
     }
 }

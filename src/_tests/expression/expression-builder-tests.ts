@@ -1,4 +1,5 @@
 import { SourceExpressionBuilder } from "../../expression/builder/source-builder";
+import { EntityExpressionBase } from "../../expression/expressions/base/entity-expression-base";
 import { ReferenceExpression } from "../../expression/expressions/reference-expression";
 import { Operator } from "../../utilities/types/operators";
 import { Company } from "../entities/company";
@@ -7,7 +8,7 @@ import { Assert } from "../_framework/assert";
 import { test, tests } from "../_framework/decorators";
 
 @tests()
-export class BuilderTests {
+export class ExpressionBuilderTests {
     @test()
     BuildSourceExpression() {
         let companiesExpression = SourceExpressionBuilder.New(Company);
@@ -16,7 +17,7 @@ export class BuilderTests {
 
     @test()
     BuildReferenceExpression() {
-        let companiesExpression = SourceExpressionBuilder.New(Company);
+        let companiesExpression: EntityExpressionBase<Company> = SourceExpressionBuilder.New(Company);
         let employeesExpression = companiesExpression.Reference(company => company.Employees);
         Assert.AreEqual(employeesExpression.EntityConstructor, Employee);
         Assert.AreEqual(employeesExpression.From, companiesExpression);

@@ -37,15 +37,15 @@ export class CalculationLexers {
         [Operator.MultiplyBy]: -3,
         [Operator.DividedBy]: -3,
         [Operator.Plus]: -4,
-        [Operator.Minus]: -5,
-        [Operator.EqualTo]: -6,
-        [Operator.NotEqualTo]: -6,
-        [Operator.GreaterThan]: -6,
-        [Operator.LessThan]: -6,
-        [Operator.NoGreaterThan]: -6,
-        [Operator.NoLessThan]: -6,
-        [Operator.And]: -7,
-        [Operator.Or]: -8
+        [Operator.Minus]: -4,
+        [Operator.EqualTo]: -5,
+        [Operator.NotEqualTo]: -5,
+        [Operator.GreaterThan]: -5,
+        [Operator.LessThan]: -5,
+        [Operator.NoGreaterThan]: -5,
+        [Operator.NoLessThan]: -5,
+        [Operator.And]: -6,
+        [Operator.Or]: -7
     }
 
     static Calculation: Lexer<CalculationExpression> = new Lexer<CalculationExpression>(

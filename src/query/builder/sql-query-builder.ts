@@ -1,8 +1,16 @@
 import { ExpressionBase } from "../../expression/expressions/base/expression-base";
+import { ValueExpressionBase } from "../../expression/expressions/base/value-expression-base";
+import { CalculateExpression } from "../../expression/expressions/component/calculate-expression";
+import { ColumnExpression } from "../../expression/expressions/component/column-expression";
+import { ConstantExpression } from "../../expression/expressions/component/constant-expression";
+import { NotExpression } from "../../expression/expressions/component/not-expression";
+import { VariableExpression } from "../../expression/expressions/component/variable-expression";
+import { FilterExpression } from "../../expression/expressions/filter-expression";
 import { ReferenceExpression } from "../../expression/expressions/reference-expression";
 import { SourceExpression } from "../../expression/expressions/source-expression";
-import { Schema } from "../../schema/schema";
+import { CalculationLexers } from "../../utilities/lexer/calculation-lexers";
 import { Operator } from "../../utilities/types/operators";
+import { ValueType } from "../../utilities/types/value-type";
 import { QueryPlan } from "../plan/query-plan";
 import { Calculation, CalculationValue } from "../sqls/calculation";
 import { Column } from "../sqls/column";
@@ -14,7 +22,7 @@ import { Table } from "../sqls/table";
 import { QueryBuilder } from "./query-builder";
 
 export abstract class SqlQueryBuilder implements QueryBuilder {
-    constructor(public Schema: Schema) {}
+    constructor() {}
 
     BuildQuery(queryPlan: QueryPlan): SqlQuery {
         let query = new SqlQuery(queryPlan);
@@ -43,79 +51,156 @@ export abstract class SqlQueryBuilder implements QueryBuilder {
             case ReferenceExpression:
                 this.BuildQueryWithReferenceExpression(sqlQuery, expression as ReferenceExpression<any, T>);
                 break;
+            case FilterExpression:
+                this.BuildQueryWithFilterExpression(sqlQuery, expression as FilterExpression<T>);
+                break;
             default:
-                throw new Error("Method not implemented.");
+                throw new Error(`Method not implemented for ${expression.constructor.name}.`);
         }
     }
 
     BuildQueryWithSourceExpression<T>(sqlQuery: SqlQuery, sourceExpression: SourceExpression<T>) {
-        let select = new Select();
+        let select = sqlQuery.CreateAndAddSelect(sourceExpression);
 
-        let entityDiagram = this.Schema.GetOrAddEntity(sourceExpression.EntityConstructor);
-
-        select.From = new Source(new Table(entityDiagram.Name));
+        select.SetFrom(sourceExpression);
         
-        Object.values(entityDiagram.Columns).forEach(columnDiagram => {
-            let column = new Column(columnDiagram.Name);
-            column.Source = select.From;
-
-            select.Columns.push(column);
+        Object.values(sourceExpression.EntityDiagram.Columns).forEach(columnDiagram => {
+            let column = select.From!.Column(columnDiagram);
+            select.AddColumn(column);
         });
-
-        sqlQuery.AddSubQuery(select);
     }
 
     BuildQueryWithReferenceExpression<TFrom, TTo>(sqlQuery: SqlQuery, referenceExpression: ReferenceExpression<TFrom, TTo>) {
         this.BuildQueryWithExpression(sqlQuery, referenceExpression.From);
 
-        let select: Select;
-        if (!sqlQuery.SubQueries.length || !(sqlQuery.SubQueries[sqlQuery.SubQueries.length - 1] instanceof Select)) {
-            sqlQuery.AddSubQuery(new Select(), referenceExpression);
-        }
-        select = sqlQuery.SubQueries[sqlQuery.SubQueries.length - 1] as Select;
+        let select = sqlQuery.GetLast() as Select;
 
         let relationshipDiagram = referenceExpression.Relationship;
-        let fromEntityDiagram = relationshipDiagram.From;
-        let toEntityDiagram = this.Schema.GetOrAddEntity(relationshipDiagram.GetToType());
+        let toEntityDiagram = referenceExpression.Schema.GetOrAddEntity(relationshipDiagram.GetToType());
         let reverseRelationshipDiagram = toEntityDiagram.GetReserveRelationship(relationshipDiagram);
 
         select.Columns.forEach(column => {
             column.Alias = `${reverseRelationshipDiagram!.Name}.${column.Alias || column.Name}`;
         });
 
-        let from = new Source(new Table(toEntityDiagram.Name));
+        let join = select.Join(referenceExpression);
+        join.IsInner = true;
         
         Object.values(toEntityDiagram.Columns).forEach(columnDiagram => {
-            let column = new Column(columnDiagram.Name);
-            column.Source = from;
+            let column = join.Joinee.Column(columnDiagram);
             column.Alias = columnDiagram.Name;
 
-            select.Columns.push(column);
+            select.AddColumn(column);
         });
-
-        let join = new Join(new Source(new Table(fromEntityDiagram.Name)));
-        join.IsLeft = true;
-        join.Joinee = select.From as Source;
-        select.From = from;
 
         relationshipDiagram.PairingPattern.forEach(pairing => {
-            let fromId = select.Columns.find(column => column.Source === join.Joinee && column.Name === pairing.FromKey)!;
-            let toId = select.Columns.find(column => column.Source === select.From && column.Name === pairing.ToKey)!;
+            let fromKey = select.Columns.find(column => column.Source === select.From && column.Name === pairing.FromKey)!;
+            let toKey = select.Columns.find(column => column.Source === join.Joinee && column.Name === pairing.ToKey)!;
 
-            let condition = new Calculation(
-                Operator.EqualTo,
-                fromId,
-                toId
-            );
+            let condition = new Calculation(join, Operator.EqualTo, fromKey, toKey);
 
             join.On = join.On
-                ? new Calculation(Operator.And, join.On, condition)
+                ? new Calculation(join, Operator.And, join.On, condition)
                 : condition;
         });
+        if (select.Where) {
+            join.On = new Calculation(join, Operator.And, join.On, select.Where);
+            select.Where = undefined;
+        }
+    }
 
-        join.Joinee.Alias = join.Joinee.Alias || fromEntityDiagram.Name.toLocaleLowerCase();
-        select.From.Alias = select.From.Alias || toEntityDiagram.Name.toLocaleLowerCase();
-        select.JOINs.unshift(join);
+    BuildQueryWithFilterExpression<T>(sqlQuery: SqlQuery, filterExpression: FilterExpression<T>) {
+        if (!sqlQuery.ExpressionStatementStack.HasStatementFor(filterExpression.From)) {
+            this.BuildQueryWithExpression(sqlQuery, filterExpression.From);
+        }
+
+        let select = sqlQuery.GetLast() as Select;
+        
+        let condition = this.ConvertConditionExpressionToSqlStatement(select, filterExpression.Condition);
+        if (!(condition instanceof Calculation)) {
+            condition = new Calculation(select, Operator.Is, condition);
+        }
+        
+        let existingCondition: Calculation | undefined = undefined;
+
+        if (select.Where) {
+            existingCondition = select.Where;
+        } else if (select.Joins && select.Joins.length) {
+            existingCondition = select.Joins[select.Joins.length - 1].On;
+        }
+
+        if (existingCondition) {
+            existingCondition.Left = new Calculation(
+                select,
+                existingCondition.Operator,
+                existingCondition.Left,
+                existingCondition.Right
+            );
+
+            existingCondition.Operator = Operator.And;
+            existingCondition.Right = condition;
+        } else {
+            select.Where = condition;
+        }
+    }
+
+    ConvertConditionExpressionToSqlStatement<T>(parent: Select | Join, conditionExpression: ValueExpressionBase<T>): CalculationValue {
+        switch (conditionExpression.constructor) {
+            case ConstantExpression:
+                return (conditionExpression as ConstantExpression<any>).Value as ValueType;
+            case ColumnExpression:
+                let columnExpression = conditionExpression as ColumnExpression<T, any>;
+                let select = parent instanceof Select
+                    ? parent
+                    : parent.Select;
+                let source = select.ExpressionStatementStack.GetStatement(columnExpression.Of) as Source<T>;
+                return source.Column(columnExpression.Diagram);
+            case NotExpression:
+                let notExpression = conditionExpression as NotExpression<T>;
+                return new Calculation(
+                    parent,
+                    Operator.Not,
+                    this.ConvertConditionExpressionToSqlStatement(parent, notExpression.Of)
+                );
+            case VariableExpression:
+                throw Error("VariableExpression related function not implemented.");
+            case CalculateExpression:
+                let calculateExpression = conditionExpression as CalculateExpression<any>;
+                return new Calculation(
+                    parent,
+                    calculateExpression.Operator,
+                    this.ConvertConditionExpressionToSqlStatement(parent, calculateExpression.LeftValue),
+                    calculateExpression.RightValue
+                        ? this.ConvertConditionExpressionToSqlStatement(parent, calculateExpression.RightValue)
+                        : undefined
+                );
+        }
+
+        throw Error("Not implemented.");
+    }
+
+    ConvertDateToString(date: Date) {
+        return `'${date.getFullYear()}-${date.getMonth() < 9 ? 0 : ''}${date.getMonth() + 1}-${date.getDate()} ${date.getHours() < 10 ? 0 : ''}${date.getHours()}:${date.getMinutes() < 10 ? 0 : ''}${date.getMinutes()}:${date.getSeconds() < 10 ? 0 : ''}${date.getSeconds()}'`;
+    }
+
+    ConvertSourceToString(source: Source<any>) {
+        let queryString;
+
+        switch (source.Data.constructor) {
+            case Table:
+                queryString = (source.Data as Table<any>).Name;
+                break;
+            default:
+                throw new Error("Method not implemented.");
+        }
+
+        if (source.Alias) {
+            queryString = (source.Data instanceof Table)
+                ? `${queryString} ${source.Alias}`
+                : `(${queryString}) ${source.Alias}`;
+        }
+
+        return queryString;
     }
 
     ConvertSelectToString(select: Select) {
@@ -125,26 +210,28 @@ export abstract class SqlQueryBuilder implements QueryBuilder {
         
         let from = select.From ? this.ConvertSourceToFromString(select.From) : '';
 
-        let joins = select.JOINs.map(join => this.ConvertJoinToString(join)).join(' ');
+        let joins = select.Joins?.map(join => this.ConvertJoinToString(join)).join(' ');
 
-        return `SELECT ${columns}${from ? ` ${from}` : ''}${joins ? ` ${joins}` : ''}`;
+        let where = select.Where ? this.ConvertWhereToString(select.Where) : '';
+
+        return `SELECT ${columns}${from ? ` ${from}` : ''}${joins ? ` ${joins}` : ''}${where ? ` ${where}` : ''}`;
     }
 
-    ConvertColumnToSelectString(column: Column) {
+    ConvertColumnToSelectString(column: Column<any>) {
         return `${this.ConvertColumnToString(column)}${column.Alias ? ` AS "${column.Alias}"` : ''}`;
     }
 
-    ConvertColumnToString(column: Column) {
+    ConvertColumnToString(column: Column<any>) {
         return column.Source && column.Source.Alias ? `${column.Source.Alias}.${column.Name}` : column.Name;
     }
 
-    ConvertSourceToFromString(source: Source) {
+    ConvertSourceToFromString(source: Source<any>) {
         return `FROM ${this.ConvertSourceToString(source)}`;
     }
 
     ConvertJoinToString(join: Join) {
         let joinee = this.ConvertSourceToString(join.Joinee);
-        let condition = this.ConvertCalculationToString(join.On);
+        let condition = this.ConvertCalculationToStringAndPriority(join.On).String;
 
         if (join.IsInner) {
             if (join.IsLeft === undefined) {
@@ -163,56 +250,79 @@ export abstract class SqlQueryBuilder implements QueryBuilder {
         throw new Error("Method not implemented.");
     }
 
-    ConvertSourceToString(source: Source) {
-        let queryString;
+    ConvertWhereToString(condition: Calculation) {
+        return `WHERE ${this.ConvertCalculationToStringAndPriority(condition).String}`;
+    }
 
-        switch (source.Data.constructor) {
-            case Table:
-                queryString = (source.Data as Table).Name;
+    ConvertCalculationToStringAndPriority(calculation: CalculationValue): { String: String, Priority: Number } {
+        let result = { String: null as any as String, Priority: 0 };
+
+        switch (calculation.constructor) {
+            case String:
+                result.String = `'${calculation}'`;
+                break;
+            case Boolean:
+            case Number:
+                result.String =  `${calculation}`;
+                break;
+            case Date:
+                result.String = `${this.ConvertDateToString(calculation as Date)}`;
+                break;
+            case Column:
+                result.String = this.ConvertColumnToString(calculation as Column<any>);
+                break;
+            case Calculation:
+                calculation = calculation as Calculation;
+                result.Priority = CalculationLexers.OperatorPriorities[calculation.Operator];
+                
+                let leftCalculation = this.ConvertCalculationToStringAndPriority(calculation.Left);
+                let left = this.WrapCalculationStringIfLessPriority(leftCalculation, result.Priority);
+                let rightCalculation = calculation.Right && this.ConvertCalculationToStringAndPriority(calculation.Right);
+                let right = rightCalculation && this.WrapCalculationStringIfLessOrEqualPriority(rightCalculation, result.Priority);
+                
+                let operator: String = calculation.Operator;
+
+                switch (calculation.Operator) {
+                    case Operator.Not:
+                        result.String = `NOT ${left}`;
+                        break;
+                    case Operator.Is:
+                        result.String = left;
+                        break;
+                    case Operator.And:
+                        operator = 'AND';
+                        break;
+                    case Operator.Or:
+                        operator = 'OR';
+                        break;
+                    case Operator.EqualTo:
+                        operator = '=';
+                        break;
+                }
+
+                result.String = result.String || `${left} ${operator} ${right}`;
+
                 break;
             default:
                 throw new Error("Method not implemented.");
         }
 
-        if (source.Alias) {
-            queryString = (source.Data instanceof Table)
-                ? `${queryString} ${source.Alias}`
-                : `(${queryString}) ${source.Alias}`;
-        }
-
-        return queryString;
+        return result;
     }
 
-    ConvertCalculationToString(calculation: CalculationValue): string {
-        switch (calculation.constructor) {
-            case String:
-                return `"${calculation}"`;
-            case Boolean:
-            case Number:
-                return `${calculation}`;
-            case Date:
-                return `"${this.ConvertDateToString(calculation as Date)}"`;
-            case Column:
-                return this.ConvertColumnToString(calculation as Column);
-            case Calculation:
-                calculation = calculation as Calculation;
-                if (calculation.Operator === Operator.Not) {
-                    let notCalculation = calculation.Left as Calculation;
-                    if (notCalculation.Operator === Operator.And || notCalculation.Operator === Operator.Or) {
-                        return `NOT (${this.ConvertCalculationToString(notCalculation)})`;
-                    }
-                    return `NOT ${this.ConvertCalculationToString(notCalculation)}`;
-                } else if (calculation.Operator === Operator.EqualTo) {
-                    return `${this.ConvertCalculationToString(calculation.Left)}=${this.ConvertCalculationToString(calculation.Right!)}`;
-                } else if (calculation.Right !== undefined) {
-                    return `${this.ConvertCalculationToString(calculation.Left)}${calculation.Operator}${this.ConvertCalculationToString(calculation.Right)}`;
-                }
+    protected WrapCalculationStringIfLessPriority(calculationString: { String: String, Priority: Number }, parentPriority: Number) {
+        if (calculationString.Priority < parentPriority) {
+            return `(${calculationString.String})`;
         }
 
-        throw new Error("Method not implemented.");
+        return calculationString.String;
     }
 
-    ConvertDateToString(date: Date) {
-        return `${date.getFullYear()}-${date.getMonth() < 9 ? 0 : ''}${date.getMonth() + 1}-${date.getDate()} ${date.getHours() < 10 ? 0 : ''}${date.getHours()}:${date.getMinutes() < 10 ? 0 : ''}${date.getMinutes()}:${date.getSeconds() < 10 ? 0 : ''}${date.getSeconds()}`;
+    protected WrapCalculationStringIfLessOrEqualPriority(calculationString: { String: String, Priority: Number }, parentPriority: Number) {
+        if (calculationString.Priority <= parentPriority) {
+            return `(${calculationString.String})`;
+        }
+
+        return calculationString.String;
     }
 }

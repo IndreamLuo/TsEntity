@@ -6,6 +6,6 @@ export class ReferenceExpression<TFrom, TTo> extends EntityExpressionBase<TTo> {
         public From: EntityExpressionBase<TFrom>,
         public Relationship: RelationshipDiagram<TFrom, TTo>
     ) {
-        super(Relationship.GetToType());
+        super(From.Schema, Relationship.GetToType());
     }
 }

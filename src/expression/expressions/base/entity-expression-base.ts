@@ -1,8 +1,9 @@
+import { Schema } from "../../../schema/schema";
 import { ConstructorType } from "../../../utilities/types/constructor-type";
 import { ExpressionBase } from "./expression-base";
 
 export abstract class EntityExpressionBase<T> extends ExpressionBase {
-    constructor (public EntityConstructor: ConstructorType<T>) {
+    constructor (public Schema: Schema, public EntityConstructor: ConstructorType<T>) {
         super();
     }
 }
