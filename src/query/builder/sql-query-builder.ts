@@ -53,6 +53,7 @@ export abstract class SqlQueryBuilder implements QueryBuilder {
                 break;
             case FilterExpression:
                 this.BuildQueryWithFilterExpression(sqlQuery, expression as FilterExpression<T>);
+                break;
             default:
                 throw new Error(`Method not implemented for ${expression.constructor.name}.`);
         }
@@ -61,7 +62,7 @@ export abstract class SqlQueryBuilder implements QueryBuilder {
     BuildQueryWithSourceExpression<T>(sqlQuery: SqlQuery, sourceExpression: SourceExpression<T>) {
         let select = sqlQuery.CreateAndAddSelect(sourceExpression);
 
-        select.SetFrom(sourceExpression.EntityDiagram);
+        select.SetFrom(sourceExpression);
         
         Object.values(sourceExpression.EntityDiagram.Columns).forEach(columnDiagram => {
             let column = select.From!.Column(columnDiagram);
@@ -178,49 +179,8 @@ export abstract class SqlQueryBuilder implements QueryBuilder {
         throw Error("Not implemented.");
     }
 
-    ConvertSelectToString(select: Select) {
-        let columns = select.Columns
-            .map(column => this.ConvertColumnToSelectString(column))
-            .join(',');
-        
-        let from = select.From ? this.ConvertSourceToFromString(select.From) : '';
-
-        let joins = select.Joins?.map(join => this.ConvertJoinToString(join)).join(' ');
-
-        return `SELECT ${columns}${from ? ` ${from}` : ''}${joins ? ` ${joins}` : ''}`;
-    }
-
-    ConvertColumnToSelectString(column: Column<any>) {
-        return `${this.ConvertColumnToString(column)}${column.Alias ? ` AS "${column.Alias}"` : ''}`;
-    }
-
-    ConvertColumnToString(column: Column<any>) {
-        return column.Source && column.Source.Alias ? `${column.Source.Alias}.${column.Name}` : column.Name;
-    }
-
-    ConvertSourceToFromString(source: Source<any>) {
-        return `FROM ${this.ConvertSourceToString(source)}`;
-    }
-
-    ConvertJoinToString(join: Join) {
-        let joinee = this.ConvertSourceToString(join.Joinee);
-        let condition = this.ConvertCalculationToString(join.On).String;
-
-        if (join.IsInner) {
-            if (join.IsLeft === undefined) {
-                return `INNER JOIN ${joinee} ON ${condition}`;
-            }
-        } else {
-            if (join.IsLeft) {
-                return `LEFT OUTER JOIN ${joinee} ON ${condition}`;
-            } else if (join.IsLeft === false) {
-                return `RIGHT OUTER JOIN ${joinee} ON ${condition}`;
-            } else {
-                return `FULL OUTER JOIN ${joinee} ON ${condition}`;
-            }
-        }
-        
-        throw new Error("Method not implemented.");
+    ConvertDateToString(date: Date) {
+        return `'${date.getFullYear()}-${date.getMonth() < 9 ? 0 : ''}${date.getMonth() + 1}-${date.getDate()} ${date.getHours() < 10 ? 0 : ''}${date.getHours()}:${date.getMinutes() < 10 ? 0 : ''}${date.getMinutes()}:${date.getSeconds() < 10 ? 0 : ''}${date.getSeconds()}'`;
     }
 
     ConvertSourceToString(source: Source<any>) {
@@ -243,19 +203,70 @@ export abstract class SqlQueryBuilder implements QueryBuilder {
         return queryString;
     }
 
-    ConvertCalculationToString(calculation: CalculationValue): { String: String, Priority: Number } {
+    ConvertSelectToString(select: Select) {
+        let columns = select.Columns
+            .map(column => this.ConvertColumnToSelectString(column))
+            .join(',');
+        
+        let from = select.From ? this.ConvertSourceToFromString(select.From) : '';
+
+        let joins = select.Joins?.map(join => this.ConvertJoinToString(join)).join(' ');
+
+        let where = select.Where ? this.ConvertWhereToString(select.Where) : '';
+
+        return `SELECT ${columns}${from ? ` ${from}` : ''}${joins ? ` ${joins}` : ''}${where ? ` ${where}` : ''}`;
+    }
+
+    ConvertColumnToSelectString(column: Column<any>) {
+        return `${this.ConvertColumnToString(column)}${column.Alias ? ` AS "${column.Alias}"` : ''}`;
+    }
+
+    ConvertColumnToString(column: Column<any>) {
+        return column.Source && column.Source.Alias ? `${column.Source.Alias}.${column.Name}` : column.Name;
+    }
+
+    ConvertSourceToFromString(source: Source<any>) {
+        return `FROM ${this.ConvertSourceToString(source)}`;
+    }
+
+    ConvertJoinToString(join: Join) {
+        let joinee = this.ConvertSourceToString(join.Joinee);
+        let condition = this.ConvertCalculationToStringAndPriority(join.On).String;
+
+        if (join.IsInner) {
+            if (join.IsLeft === undefined) {
+                return `INNER JOIN ${joinee} ON ${condition}`;
+            }
+        } else {
+            if (join.IsLeft) {
+                return `LEFT OUTER JOIN ${joinee} ON ${condition}`;
+            } else if (join.IsLeft === false) {
+                return `RIGHT OUTER JOIN ${joinee} ON ${condition}`;
+            } else {
+                return `FULL OUTER JOIN ${joinee} ON ${condition}`;
+            }
+        }
+        
+        throw new Error("Method not implemented.");
+    }
+
+    ConvertWhereToString(condition: Calculation) {
+        return `WHERE ${this.ConvertCalculationToStringAndPriority(condition).String}`;
+    }
+
+    ConvertCalculationToStringAndPriority(calculation: CalculationValue): { String: String, Priority: Number } {
         let result = { String: null as any as String, Priority: 0 };
 
         switch (calculation.constructor) {
             case String:
-                result.String = `"${calculation}"`;
+                result.String = `'${calculation}'`;
                 break;
             case Boolean:
             case Number:
                 result.String =  `${calculation}`;
                 break;
             case Date:
-                result.String = `"${this.ConvertDateToString(calculation as Date)}"`;
+                result.String = `${this.ConvertDateToString(calculation as Date)}`;
                 break;
             case Column:
                 result.String = this.ConvertColumnToString(calculation as Column<any>);
@@ -264,9 +275,9 @@ export abstract class SqlQueryBuilder implements QueryBuilder {
                 calculation = calculation as Calculation;
                 result.Priority = CalculationLexers.OperatorPriorities[calculation.Operator];
                 
-                let leftCalculation = this.ConvertCalculationToString(calculation.Left);
+                let leftCalculation = this.ConvertCalculationToStringAndPriority(calculation.Left);
                 let left = this.WrapCalculationStringIfLessPriority(leftCalculation, result.Priority);
-                let rightCalculation = calculation.Right && this.ConvertCalculationToString(calculation.Right);
+                let rightCalculation = calculation.Right && this.ConvertCalculationToStringAndPriority(calculation.Right);
                 let right = rightCalculation && this.WrapCalculationStringIfLessOrEqualPriority(rightCalculation, result.Priority);
                 
                 let operator: String = calculation.Operator;
@@ -280,13 +291,16 @@ export abstract class SqlQueryBuilder implements QueryBuilder {
                         break;
                     case Operator.And:
                         operator = 'AND';
+                        break;
                     case Operator.Or:
                         operator = 'OR';
+                        break;
                     case Operator.EqualTo:
                         operator = '=';
-                    default:
-                        result.String = `${left}${operator}${right}`;
+                        break;
                 }
+
+                result.String = result.String || `${left} ${operator} ${right}`;
 
                 break;
             default:
@@ -310,9 +324,5 @@ export abstract class SqlQueryBuilder implements QueryBuilder {
         }
 
         return calculationString.String;
-    }
-
-    ConvertDateToString(date: Date) {
-        return `${date.getFullYear()}-${date.getMonth() < 9 ? 0 : ''}${date.getMonth() + 1}-${date.getDate()} ${date.getHours() < 10 ? 0 : ''}${date.getHours()}:${date.getMinutes() < 10 ? 0 : ''}${date.getMinutes()}:${date.getSeconds() < 10 ? 0 : ''}${date.getSeconds()}`;
     }
 }

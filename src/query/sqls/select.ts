@@ -1,5 +1,5 @@
 import { ReferenceExpression } from "../../expression/expressions/reference-expression";
-import { EntityDiagram } from "../../schema/entity-diagram";
+import { SourceExpression } from "../../expression/expressions/source-expression";
 import { Calculation } from "./calculation";
 import { Column } from "./column";
 import { ExpressionStatementStack } from "./expression-statement-stack";
@@ -27,12 +27,13 @@ export class Select extends SqlStatementBase {
         this.Columns.push(column);
     }
 
-    SetFrom(entityDiagram: EntityDiagram<any>) {
+    SetFrom(sourceExpression: SourceExpression<any>) {
         if (this.From) {
             throw Error(`From already set with source [${this.From.Alias || this.From.Data.Name}].`);
         }
 
-        this.From = new Table(this, entityDiagram).Source;
+        this.From = new Table(this, sourceExpression.EntityDiagram).Source;
+        this.ExpressionStatementStack.AddForExpressionStatement(sourceExpression.Token(), this.From);
 
         return this.From;
     }
@@ -46,7 +47,7 @@ export class Select extends SqlStatementBase {
         this.Joins = this.Joins || [];
         this.Joins.push(join);
 
-        this.ExpressionStatementStack.AddForExpressionStatement(referenceExpression, joinee.Source);
+        this.ExpressionStatementStack.AddForExpressionStatement(referenceExpression.Token(), joinee.Source);
 
         return join;
     }

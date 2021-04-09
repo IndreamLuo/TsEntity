@@ -40,7 +40,7 @@ export class MsSqlQueryBuilderTests {
         Assert.IsTrue(queryString.indexOf('FROM') >= 0);
 
         let companies: Company[] = (await this.MsSqlClient.request().query(queryString)).recordset;
-        Assert.IsTrue(companies);
+        Assert.IsNotEmpty(companies);
         companies.forEach(company => {
             Assert.IsTrue(company.Id);
             Assert.IsTrue(company.Name);
@@ -63,7 +63,7 @@ export class MsSqlQueryBuilderTests {
         Assert.IsTrue(queryString.indexOf('INNER JOIN') >= 0);
 
         let employees: Employee[] = (await this.MsSqlClient.request().query(queryString)).recordset;
-        Assert.IsTrue(employees);
+        Assert.IsNotEmpty(employees);
         employees.forEach(employee => {
             Assert.IsTrue(employee.LastUpdated);
             Assert.IsTrue((employee as any)['Company.Id']);
@@ -77,7 +77,7 @@ export class MsSqlQueryBuilderTests {
         queryString = this.MsSqlQueryBuilder.BuildQueryString(query);
 
         let assignments: Assignment[] = (await this.MsSqlClient.request().query(queryString)).recordset;
-        Assert.IsTrue(assignments);
+        Assert.IsNotEmpty(assignments);
         assignments.forEach(assignment => {
             Assert.IsTrue(assignment.Name);
             Assert.IsTrue(assignment.Created);
@@ -91,12 +91,40 @@ export class MsSqlQueryBuilderTests {
     }
 
     @test()
-    BuildFilterExpressionQuery() {
-        // let companiesExpression = SourceExpressionBuilder.New(Company);
-        // let filteredCompaniesExpression = companiesExpression.Filter(company => company.Id > 2);
+    async BuildFilterExpressionQuery() {
+        let companiesExpression = SourceExpressionBuilder.New(Company);
+        let filteredCompaniesExpression = companiesExpression.Filter(company => company.Id > 1);
 
-        // let queryPlan = this.QueryPlanGenerator.BuildQueryPlan(filteredCompaniesExpression);
-        // let query = this.MsSqlQueryBuilder.BuildQuery(queryPlan);
-        // let queryString = this.MsSqlQueryBuilder.BuildQueryString(query);
+        let queryPlan = this.QueryPlanGenerator.BuildQueryPlan(filteredCompaniesExpression);
+        let query = this.MsSqlQueryBuilder.BuildQuery(queryPlan);
+        let queryString = this.MsSqlQueryBuilder.BuildQueryString(query);
+        
+        Assert.IsTrue(queryString);
+        Assert.IsTrue(queryString.indexOf('SELECT') >= 0);
+        Assert.IsTrue(queryString.indexOf('FROM') >= 0);
+        Assert.IsTrue(queryString.indexOf('WHERE') >= 0);
+
+        let companies: Company[] = (await this.MsSqlClient.request().query(queryString)).recordset;
+        Assert.IsNotEmpty(companies);
+        companies.forEach(company => {
+            Assert.IsTrue(company.Name);
+            Assert.IsTrue(company.LastUpdated);
+            Assert.IsTrue(company.Id > 1);
+        });
+
+        let employeesExpression = filteredCompaniesExpression.Reference(company => company.Employees);
+        let lastUpdated = companies[0].LastUpdated;
+        let filteredEmployeesExpression = employeesExpression.Filter([lastUpdated], (employee, lastUpdated) => employee.LastUpdated >= lastUpdated);
+
+        queryPlan = this.QueryPlanGenerator.BuildQueryPlan(filteredEmployeesExpression);
+        query = this.MsSqlQueryBuilder.BuildQuery(queryPlan);
+        queryString = this.MsSqlQueryBuilder.BuildQueryString(query);
+
+        let employees: Employee[] = (await this.MsSqlClient.request().query(queryString)).recordset;
+        Assert.IsNotEmpty(employees);
+        employees.forEach(employee => {
+            Assert.IsTrue(employee.LastUpdated);
+            Assert.IsTrue(employee.LastUpdated >= lastUpdated);
+        });
     }
 }

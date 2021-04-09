@@ -1,6 +1,5 @@
 import { ExpressionBase } from "../../expression/expressions/base/expression-base";
 import { NumberDictionary } from "../../utilities/types/dictionaries";
-import { StatementBase } from "../base/statement-base";
 import { SqlStatementBase } from "./sql-statement-base";
 
 export class ExpressionStatementStack {
@@ -8,8 +7,8 @@ export class ExpressionStatementStack {
 
     ExpressionStatements: NumberDictionary<SqlStatementBase> = {};
 
-    AddForExpressionStatement(expression: ExpressionBase, sqlStatement: StatementBase) {
-        this.ExpressionStatements[expression.Id] == sqlStatement;
+    AddForExpressionStatement(expression: ExpressionBase, sqlStatement: SqlStatementBase) {
+        this.ExpressionStatements[expression.Id] = sqlStatement;
     }
 
     GetStatement(expressionId: Number): SqlStatementBase | undefined

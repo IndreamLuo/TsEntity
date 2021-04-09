@@ -93,7 +93,7 @@ function ConvertParsedToTokenExpression(schema: Schema, parameters: StringDictio
         throw SyntaxError(`Parameter "${parsed.Identifier}" is not in input parameters. For parameter(s) other than token, a parameter is needed. For example: companies.fileter([b, now], (company, b) => company.Id == 0 && b.Date == now)`);
     }
 
-    if (identifier.constructor === TokenExpression || identifier.constructor === ReferenceExpression) {
+    if (identifier instanceof TokenExpression || identifier instanceof ReferenceExpression) {
         let entityDiagram = schema.GetOrAddEntity(identifier.EntityConstructor);
         let relationship = entityDiagram.GetRelationship(field);
         
@@ -102,8 +102,10 @@ function ConvertParsedToTokenExpression(schema: Schema, parameters: StringDictio
         }
 
         return new ReferenceExpression(identifier, relationship);
-    } else if (identifier.constructor === ColumnExpression) {
+    } else if (identifier instanceof ColumnExpression) {
         throw Error();
+    } else if (identifier instanceof Date || typeof(identifier) === 'boolean' || typeof(identifier) === 'number' || typeof(identifier) === 'string') {
+        return new ConstantExpression(identifier);
     }
 
     throw Error();

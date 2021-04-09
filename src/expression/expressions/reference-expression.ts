@@ -1,5 +1,4 @@
 import { RelationshipDiagram } from "../../schema/relationship-diagram";
-import { Schema } from "../../schema/schema";
 import { EntityExpressionBase } from "./base/entity-expression-base";
 
 export class ReferenceExpression<TFrom, TTo> extends EntityExpressionBase<TTo> {

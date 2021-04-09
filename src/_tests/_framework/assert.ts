@@ -21,6 +21,14 @@ export class Assert {
         return this.IsFalse(left == right, errorMessage);
     }
 
+    static IsEmpty<T>(array: T[], errorMessage: () => string = () => `[${array.join(', ')}] is not empty.`) {
+        return this.IsTrue(array.length === 0, errorMessage);
+    }
+
+    static IsNotEmpty<T>(array: T[], errorMessage: () => string = () => `Array is empty.`) {
+        return this.IsTrue(array.length > 0, errorMessage);
+    }
+
     static WillThrowError(call: Function, errorMessage: string) {
         try {
             let invoke = call();
