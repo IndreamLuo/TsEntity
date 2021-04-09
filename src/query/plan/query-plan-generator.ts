@@ -49,7 +49,7 @@ export class QueryPlanGenerator {
         mergingQueryPlans.forEach(plan => {
             plan.AllExpressions.forEach(usedExpression => {
                 if (queryPlan.Contains(usedExpression)) {
-                    stages.push(usedExpression);
+                    // stages.push(usedExpression);
                 } else {
                     queryPlan.AddExpression(usedExpression);
                 }
