@@ -18,14 +18,17 @@
 # You can create any custom variable you would like, and they will be accessible
 # in the templates via {{ site.myvariable }}.
 
-title: TS Entity
+title: TsEntity
 email: your-email@example.com
 description: >- # this means to ignore newlines until "baseurl:"
-  TS Entity is an ORM designed to support extension method based querying.
+  TsEntity is an ORM designed to support extension method based querying.
 baseurl: "" # the subpath of your site, e.g. /blog
 url: "https://tsentity.com" # the base hostname & protocol for your site, e.g. http://example.com
 # twitter_username: jekyllrb
-github_username:  indreamluo
+github_username:  IndreamLuo
+github_repo:
+  url: IndreamLuo/TsEntity
+  name: TsEntity
 
 # Build settings
 theme: minima
